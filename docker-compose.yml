@@ -1,0 +1,44 @@
+version: '3.8'
+
+services:
+  # API Gateway
+  api_gateway:
+    build: ./api_gateway
+    container_name: api_gateway
+    ports:
+      - "8000:8000"  # Открываем порт для API Gateway
+    depends_on:
+      - auth_service
+    environment:
+      - API_GATEWAY_ENV=development
+    networks:
+      - app_network
+
+  # Микросервис аутентификации
+  auth_service:
+    build: ./auth_service
+    container_name: auth_service
+    ports:
+      - "8001:8000"  # Открываем порт для микросервиса аутентификации
+    environment:
+      - AUTH_SERVICE_ENV=development
+    networks:
+      - app_network
+
+  # Клиент (Веб-приложение)
+  client_web:
+    build: ./client_web
+    container_name: client_web
+    ports:
+      - "3000:3000"  # Открываем порт для веб-приложения
+    depends_on:
+      - api_gateway
+    environment:
+      - REACT_APP_API_GATEWAY=http://api_gateway:8000  # Указываем URL для API Gateway
+    networks:
+      - app_network
+
+networks:
+  app_network:
+    driver: bridge
+
