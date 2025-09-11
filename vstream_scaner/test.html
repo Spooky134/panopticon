@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Видео поток через WebRTC</title>
+    <script defer src="https://webrtc.github.io/adapter/adapter-latest.js"></script>
+</head>
+<body>
+    <h1>Видео поток через WebRTC</h1>
+    <video id="localVideo" autoplay playsinline></video>
+    <video id="remoteVideo" autoplay playsinline></video>
+    <button id="startButton">Начать поток</button>
+    <button id="stopButton">Остановить поток</button>
+
+    <script>
+        let localStream;
+        let pc;
+        const startButton = document.getElementById("startButton");
+        const stopButton = document.getElementById("stopButton");
+        const localVideo = document.getElementById("localVideo");
+        const remoteVideo = document.getElementById("remoteVideo");
+        
+        startButton.onclick = async () => {
+            localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+            localVideo.srcObject = localStream;
+            
+            pc = new RTCPeerConnection();
+            localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
+
+            pc.ontrack = event => {
+                remoteVideo.srcObject = event.streams[0];
+            };
+
+            pc.onicecandidate = event => {
+            if (event.candidate) {
+                console.log("New ICE candidate:", event.candidate);
+            }
+            };
+            
+            const offer = await pc.createOffer();
+            await pc.setLocalDescription(offer);
+            
+            const response = await fetch("http://localhost:8000/offer", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ sdp: offer.sdp, type: offer.type })
+            });
+            
+            const answer = await response.json();
+            await pc.setRemoteDescription(new RTCSessionDescription(answer));
+        };
+
+        stopButton.onclick = () => {
+            localStream.getTracks().forEach(track => track.stop());
+            pc.close();
+        };
+        
+    </script>
+</body>
+</html>

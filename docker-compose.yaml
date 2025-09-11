@@ -1,0 +1,68 @@
+services:
+  gateway:
+    container_name: gateway
+    build: ./gateway
+    ports:
+      - "80:80"
+    depends_on:
+      link_api:
+        condition: service_healthy
+    networks:
+      - app_network
+
+  database:
+    image: mysql
+    env_file: .env
+    container_name: database
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${DB_NAME}
+      MYSQL_USER: ${DB_USER}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "3306:3306"
+    volumes:
+      - database_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - app_network
+
+  link_api:
+    build: ./link_api
+    container_name: link_api
+    env_file: .env
+    environment:
+      - DB_URL=mysql+aiomysql://${DB_USER}:${DB_PASSWORD}@database:3306/${DB_NAME}
+      - PYTHONPATH=/
+    ports:
+      - "8000:8000"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    volumes:
+      - ./link_api/app:/app  # Монтируем код для hot-reload
+      
+      # - ./alembic:/app/alembic
+    depends_on:
+      database:
+        condition: service_healthy
+    networks:
+      - app_network
+
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload --reload-dir /app
+    # alembic upgrade head && 
+
+volumes:
+  database_data:
+
+networks:
+  app_network:
+    driver: bridge
