@@ -1,37 +1,4 @@
 services:
-  gateway:
-    container_name: gateway
-    build: ./gateway
-    ports:
-      - "80:80"
-    depends_on:
-      link_api:
-        condition: service_healthy
-    networks:
-      - app_network
-
-  vstream_database:
-    image: mysql
-    env_file: .env
-    container_name: vstream_database
-    environment:
-      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
-      MYSQL_DATABASE: ${DB_NAME}
-      MYSQL_USER: ${DB_USER}
-      MYSQL_PASSWORD: ${DB_PASSWORD}
-    ports:
-      - "3306:3306"
-    volumes:
-      - database_data:/var/lib/mysql
-    healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-      start_period: 30s
-    networks:
-      - app_network
-
   vstream_scaner:
     container_name: vstream_scaner
     build: ./vstream_scaner

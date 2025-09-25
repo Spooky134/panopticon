@@ -1,23 +1,13 @@
-import asyncio
-from fastapi import FastAPI, BackgroundTasks, Request
 from aiortc import RTCPeerConnection, RTCSessionDescription, VideoStreamTrack
-import cv2
-from fastapi.responses import HTMLResponse
+import asyncio
 import av
-from fastapi.middleware.cors import CORSMiddleware
-from starlette.templating import Jinja2Templates
+import cv2
+from fastapi import APIRouter, BackgroundTasks
 
-app = FastAPI()
+
+router = APIRouter(prefix="/stream", tags=["stream"])
+
 pcs = set()
-templates = Jinja2Templates(directory="./")
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
 
 class VideoTransformTrack(VideoStreamTrack):
     def __init__(self, track):
@@ -33,12 +23,8 @@ class VideoTransformTrack(VideoStreamTrack):
         new_frame.pts = frame.pts  # Синхронизируем временные метки
         new_frame.time_base = frame.time_base  # Устанавливаем временную базу
         return new_frame  # Возвращаем обработанный кадр
-    
-@app.get("/", response_class=HTMLResponse)
-async def index(request: Request):
-    return templates.TemplateResponse("test.html", {"request": request})
 
-@app.post("/offer")
+@router.post("/offer")
 async def offer(sdp_data: dict, background_tasks: BackgroundTasks):
     offer = RTCSessionDescription(sdp_data["sdp"], sdp_data["type"])
     pc = RTCPeerConnection()

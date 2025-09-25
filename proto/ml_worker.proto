@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+package vstream_ml_model.ml_worker;
+
+// Запрос с кадром
+message FrameRequest {
+  string session_id = 1;
+  bytes image = 2; // JPEG кадр
+}
+
+// Ответ после обработки
+message FrameResponse {
+  bytes processed_image = 1; // JPEG кадр
+  string comment = 2;        // комментарий
+}
+
+// gRPC сервис с потоковой обработкой
+service MLService {
+  rpc StreamFrames(stream FrameRequest) returns (stream FrameResponse);
+}
