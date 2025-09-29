@@ -4,12 +4,6 @@
             "path": "vstream_gateway",
             "envManager": "ms-python.python:venv",
             "packageManager": "ms-python.python:pip"
-        },
-        {
-            "path": "vstream_ml_model",
-            "envManager": "ms-python.python:venv",
-            "packageManager": "ms-python.python:pip"
         }
-    ],
-    "python-envs.defaultEnvManager": "ms-python.python:venv"
+    ]
 }

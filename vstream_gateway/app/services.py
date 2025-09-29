@@ -1,36 +1,46 @@
 from aiortc import RTCPeerConnection, RTCSessionDescription
 import asyncio
 from fastapi import BackgroundTasks
-from utils import VideoTransformTrack
-
+from utils import GrpcVideoProcessor, VideoTransformTrack
+import uuid
 
 class StreamService:
     def __init__(self):
         self.pcs = set()
+        self.session_processors = {}
     
     async def offer(self, sdp_data: dict, background_tasks: BackgroundTasks) -> dict:
         offer = RTCSessionDescription(sdp_data["sdp"], sdp_data["type"])
         pc = RTCPeerConnection()
         self.pcs.add(pc)
 
+
+        # Создаем уникальную сессию для этого подключения
+        session_id = str(uuid.uuid4())
+        grpc_processor = GrpcVideoProcessor(session_id)
+        await grpc_processor.start()
+        self.session_processors[session_id] = grpc_processor
+
         @pc.on("track")
-        def on_track(track):
-            print(f"Получен трек: {track.kind}")
+        async def on_track(track):
+            print(f"Получен трек: {track.kind} для сессии { session_id }")
             if track.kind == "video":
-                transformed_track = VideoTransformTrack(track)  # Создаем измененный поток
+                transformed_track = VideoTransformTrack(track, grpc_processor)  # Создаем измененный поток
                 pc.addTrack(transformed_track)  # Добавляем его в соединение
 
         @pc.on("iceconnectionstatechange")
-        def on_ice_state_change():
-            print(f"ICE connection state: {pc.iceConnectionState}")
+        async def on_ice_state_change():
+            print(f"ICE connection state: {pc.iceConnectionState} для сессии { session_id }")
             if pc.iceConnectionState in ["failed", "closed", "disconnected"]:
+                # Очищаем ресурсы сессии
+                if session_id in self.session_processors:
+                    await self.session_processors[session_id].stop()
+                    del self.session_processors[session_id]
                 background_tasks.add_task(self.__close_peer_connection, pc)
 
         await pc.setRemoteDescription(offer)
-        
         # Ждем сбора ICE-кандидатов
         await asyncio.sleep(1)
-
         answer = await pc.createAnswer()
         await pc.setLocalDescription(answer)
 

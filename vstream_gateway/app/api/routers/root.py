@@ -7,7 +7,7 @@ import socket
 
 router = APIRouter(tags=["root"])
 
-templates = Jinja2Templates(directory="./")
+templates = Jinja2Templates(directory="app/")
 
 def get_local_ip():
     try:
