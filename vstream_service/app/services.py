@@ -1,8 +1,11 @@
-from aiortc import RTCPeerConnection, RTCSessionDescription
+from aiortc import RTCPeerConnection, RTCSessionDescription, RTCConfiguration, RTCIceServer
 import asyncio
 from fastapi import BackgroundTasks
+
+from app.config import settings
 from utils import GrpcVideoProcessor, VideoTransformTrack
 import uuid
+
 
 class StreamService:
     def __init__(self):
@@ -11,7 +14,14 @@ class StreamService:
     
     async def offer(self, sdp_data: dict, background_tasks: BackgroundTasks) -> dict:
         offer = RTCSessionDescription(sdp_data["sdp"], sdp_data["type"])
-        pc = RTCPeerConnection()
+        ice_servers = [
+            RTCIceServer(urls=["stun:stun.l.google.com:19302"]),
+            RTCIceServer(urls=[settings.TURN_URL], username=settings.TURN_USER, credential=settings.TURN_PASS),
+        ]
+        print(settings.TURN_URL)
+        rtc_config = RTCConfiguration(iceServers=ice_servers)
+        pc = RTCPeerConnection(rtc_config)
+
         self.pcs.add(pc)
 
 
@@ -44,7 +54,14 @@ class StreamService:
         answer = await pc.createAnswer()
         await pc.setLocalDescription(answer)
 
-        return {"sdp": pc.localDescription.sdp, "type": pc.localDescription.type}
+        return {
+            "sdp": pc.localDescription.sdp,
+            "type": pc.localDescription.type,
+            "iceServers": [
+                {"urls": ["stun:stun.l.google.com:19302"]},
+                {"urls": [settings.TURN_URL], "username": settings.TURN_USER, "credential": settings.TURN_PASS}
+            ]
+        }
 
 
     async def __close_peer_connection(self, pc: RTCPeerConnection):

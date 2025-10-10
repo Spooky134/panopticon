@@ -8,12 +8,13 @@ import grpc
 import ml_worker_pb2
 import ml_worker_pb2_grpc
 from fastapi import BackgroundTasks
+from config import settings
 
 
 class GrpcVideoProcessor:
     def __init__(self, session_id: str):
         self.session_id = session_id
-        self.channel = grpc.aio.insecure_channel('localhost:50051')
+        self.channel = grpc.aio.insecure_channel(f'{settings.ML_WORKER_HOST}:{settings.ML_WORKER_PORT}')
         self.stub = ml_worker_pb2_grpc.MLServiceStub(self.channel)
         self.request_queue = asyncio.Queue()
         self.response_queue = asyncio.Queue()
@@ -63,7 +64,10 @@ class GrpcVideoProcessor:
             
             async for response in self.stub.StreamFrames(request_generator()):
                 await self.response_queue.put(response.processed_image)
-                
+
+
+        except asyncio.CancelledError:
+            print(f"gRPC поток остановлен для {self.session_id}")
         except Exception as e:
             print(f"Ошибка в gRPC потоке для сессии {self.session_id}: {e}")
 

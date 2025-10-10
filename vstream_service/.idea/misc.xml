@@ -3,5 +3,5 @@
   <component name="Black">
     <option name="sdkName" value="Python 3.13 virtualenv at ~/Projects/vstream_scaner_service/vstream_gateway/venv" />
   </component>
-  <component name="ProjectRootManager" version="2" project-jdk-name="Python 3.13 virtualenv at ~/Projects/vstream_scaner_service/vstream_gateway/venv" project-jdk-type="Python SDK" />
+  <component name="ProjectRootManager" version="2" project-jdk-name="Python 3.13 virtualenv at ~/Projects/panopticon/vstream_service/venv" project-jdk-type="Python SDK" />
 </project>

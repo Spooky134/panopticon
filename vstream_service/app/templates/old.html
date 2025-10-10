@@ -74,7 +74,7 @@
 <body>
     <div class="container">
         <h1 class="display-5 fw-bold">Video stream via WebRTC</h1>
-        
+
         <div class="row">
             <div class="col-md-6">
                 <div class="video-container">
@@ -99,7 +99,7 @@
                 </div>
             </div>
         </div>
-        
+
         <div class="controls">
             <button id="toggleButton" class="btn btn-primary btn-lg">
                 <span class="status-indicator"></span>
@@ -111,11 +111,14 @@
         </div>
     </div>
 
+
     <script>
         let localStream;
         let pc;
         let isStreaming = false;
-        
+
+
+
         const toggleButton = document.getElementById("toggleButton");
         const localVideo = document.getElementById("localVideo");
         const remoteVideo = document.getElementById("remoteVideo");
@@ -123,63 +126,87 @@
         const remoteStatus = document.getElementById("remoteStatus");
         const connectionInfo = document.getElementById("connectionInfo");
         const statusIndicator = document.querySelector(".status-indicator");
-        
+
+
+
+
         toggleButton.onclick = async () => {
+            let tStart;
             if (!isStreaming) {
                 // Запуск потока
                 try {
                     toggleButton.disabled = true;
                     toggleButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span> Подключение...';
-                    
-                    localStream = await navigator.mediaDevices.getUserMedia({ 
-                        video: { width: 1280, height: 720 }, 
-                        audio: false 
+
+                    localStream = await navigator.mediaDevices.getUserMedia({
+                        video: { width: 1280, height: 720 },
+                        audio: false
                     });
-                    
+
                     localVideo.srcObject = localStream;
                     localStatus.textContent = "Active";
                     localStatus.className = "badge bg-success";
-                    
-                    pc = new RTCPeerConnection();
+
+
+                    pc = new RTCPeerConnection({
+                          iceServers: [
+                            { urls: ["stun:stun.l.google.com:19302"] },
+                            // сюда gateway сам вернёт нужный TURN из ответа
+                            {
+                              urls: [`turn:${window.location.hostname}:3478`], // <-- тот же IP
+                              username: "user",
+                              credential: "pass"
+                            }
+                          ]
+                        });
+
                     localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
+
 
                     pc.ontrack = event => {
                         remoteVideo.srcObject = event.streams[0];
                         remoteStatus.textContent = "Active";
                         remoteStatus.className = "badge bg-success";
-                        connectionInfo.textContent = "Stream is active";
+
+                        const tEnd = performance.now();
+                        const latency = (tEnd - tStart).toFixed(0);
+                        connectionInfo.textContent = `Client→Gateway→ML→Client latency: ${latency} ms`;
                     };
+
+
 
                     pc.oniceconnectionstatechange = () => {
                         connectionInfo.textContent = `Status: ${pc.iceConnectionState}`;
                     };
-                    
+
                     pc.onicecandidate = event => {
                         if (event.candidate) {
                             console.log("New ICE candidate:", event.candidate);
                         }
                     };
-                    
+
+
                     const offer = await pc.createOffer();
+
                     await pc.setLocalDescription(offer);
 
-                    const SERVER_URL = "http://{{ host }}:{{ port }}/api/v1/stream/offer";
+                    const SERVER_URL = `http://${window.location.hostname}:8000/api/v1/stream/offer`;
 
                     const response = await fetch(SERVER_URL, {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify({ sdp: offer.sdp, type: offer.type })
                     });
-                    
+
                     const answer = await response.json();
                     await pc.setRemoteDescription(new RTCSessionDescription(answer));
-                    
+
                     // Успешное подключение
                     isStreaming = true;
                     toggleButton.innerHTML = '<span class="status-indicator status-active"></span> Stop stream';
                     toggleButton.className = "btn btn-danger btn-lg";
                     statusIndicator.classList.add("status-active");
-                    
+
                 } catch (error) {
                     console.error("Error during starting stream:", error);
                     connectionInfo.textContent = `Error: ${error.message}`;
@@ -194,23 +221,23 @@
                 if (pc) {
                     pc.close();
                 }
-                
+
                 localVideo.srcObject = null;
                 remoteVideo.srcObject = null;
-                
+
                 localStatus.textContent = "Inactive";
                 localStatus.className = "badge bg-secondary";
                 remoteStatus.textContent = "Inactive";
                 remoteStatus.className = "badge bg-secondary";
-                
+
                 isStreaming = false;
-                toggleButton.innerHTML = '<span class="status-indicator"></span> Начать поток';
+                toggleButton.innerHTML = '<span class="status-indicator"></span> Start stream';
                 toggleButton.className = "btn btn-primary btn-lg";
                 statusIndicator.classList.remove("status-active");
                 connectionInfo.textContent = "Stream is stopped";
             }
         };
-        
+
         // Добавляем обработчик для изменения размера видео при изменении окна
         window.addEventListener('resize', () => {
             const videos = document.querySelectorAll('video');
@@ -219,6 +246,56 @@
                 video.style.height = 'auto';
             });
         });
+
+
+
+        // === Мониторинг производительности WebRTC ===
+        async function monitorStats() {
+            if (!pc) return;
+
+            const stats = await pc.getStats();
+
+            let outboundFPS = 0;
+            let inboundFPS = 0;
+            let rtt = 0;
+            let bitrateKbps = 0;
+
+            stats.forEach(report => {
+                if (report.type === "outbound-rtp" && report.kind === "video") {
+                    if (report.framesPerSecond)
+                        outboundFPS = report.framesPerSecond;
+
+                    if (report.bytesSent && report.timestamp && report.lastBytesSent) {
+                        const deltaBytes = report.bytesSent - (report.lastBytesSent || 0);
+                        const deltaTime = report.timestamp - (report.lastTimestamp || report.timestamp);
+                        bitrateKbps = (deltaBytes * 8) / deltaTime; // Kbps
+                    }
+
+                    report.lastBytesSent = report.bytesSent;
+                    report.lastTimestamp = report.timestamp;
+                }
+
+                if (report.type === "inbound-rtp" && report.kind === "video") {
+                    if (report.framesPerSecond)
+                        inboundFPS = report.framesPerSecond;
+                    if (report.roundTripTime)
+                        rtt = report.roundTripTime * 1000; // в миллисекундах
+                }
+            });
+
+            // Показываем в интерфейсе
+            document.getElementById("localStatus").textContent = `FPS: ${outboundFPS.toFixed(1)}`;
+            document.getElementById("remoteStatus").textContent = `FPS: ${inboundFPS.toFixed(1)}`;
+            document.getElementById("connectionInfo").textContent =
+                `RTT: ${rtt.toFixed(1)} ms | Bitrate: ${bitrateKbps.toFixed(1)} kbps`;
+
+            requestAnimationFrame(monitorStats);
+        }
+
+        // Запускаем мониторинг после установления соединения
+        setTimeout(() => {
+            if (pc) monitorStats();
+        }, 2000);
     </script>
 </body>
 </html>

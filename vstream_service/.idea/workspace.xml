@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="6d686b80-bbfc-4e3b-bcb7-1d95ed914ed8" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/../docker-compose.yaml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../protos/ml_worker.proto" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../protos/script.sh" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../vstream_database/Dockerfile" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../vstream_gateway/.idea/inspectionProfiles/profiles_settings.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../vstream_gateway/.idea/misc.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../vstream_gateway/.idea/vcs.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../vstream_gateway/.idea/vstream_gateway.iml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../vstream_gateway/.idea/workspace.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../vstream_gateway/Dockerfile" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../vstream_gateway/app/__init__.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../vstream_gateway/app/api/__init__.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../vstream_gateway/app/api/routers/__init__.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../vstream_gateway/app/api/routers/root.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../vstream_gateway/app/api/routers/stream.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../vstream_gateway/app/api/schemas/__init__.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../vstream_gateway/app/config.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../vstream_gateway/app/index.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../vstream_gateway/app/main.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../vstream_gateway/app/services.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../vstream_gateway/app/utils.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../vstream_gateway/requirements.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../vstream_ml_model/Dockerfile" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../vstream_ml_model/app/server.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../vstream_ml_model/requirements.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../vstream_storage/Dockerfile" beforeDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="Python Script" />
+        <option value="HTML File" />
+      </list>
+    </option>
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$/.." />
+  </component>
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 7
+}</component>
+  <component name="ProjectId" id="33BsMYsCMVAiPxXg2jh0lmsOCqF" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "DefaultHtmlFileTemplate": "HTML File",
+    "ModuleVcsDetector.initialDetectionPerformed": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "git-widget-placeholder": "main",
+    "last_opened_file_path": "/Users/andreychvankov/Projects/panopticon/vstream_service"
+  }
+}]]></component>
+  <component name="RecentsManager">
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/app/templates" />
+    </key>
+  </component>
+  <component name="SharedIndexes">
+    <attachedChunks>
+      <set>
+        <option value="bundled-python-sdk-ce6832f46686-7b97d883f26b-com.jetbrains.pycharm.pro.sharedIndexes.bundled-PY-252.25557.178" />
+      </set>
+    </attachedChunks>
+  </component>
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="6d686b80-bbfc-4e3b-bcb7-1d95ed914ed8" name="Changes" comment="" />
+      <created>1758801752500</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1758801752500</updated>
+    </task>
+    <servers />
+  </component>
+  <component name="XDebuggerManager">
+    <breakpoint-manager>
+      <breakpoints>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/app/generated/ml_worker_pb2.py</url>
+          <line>6</line>
+          <option name="timeStamp" value="1" />
+        </line-breakpoint>
+      </breakpoints>
+    </breakpoint-manager>
+  </component>
+</project>

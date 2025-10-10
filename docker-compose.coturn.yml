@@ -1,0 +1,56 @@
+services:
+  gateway:
+    build:
+      context: .
+      dockerfile: vstream_service/Dockerfile
+    container_name: webrtc_gateway
+    ports:
+      - "${GATEWAY_PORT}:8000"                # signaling REST
+    env_file: .env
+    environment:
+      - ML_WORKER_HOST=${ML_WORKER_HOST}
+      - ML_WORKER_PORT=${ML_WORKER_PORT}
+      - TURN_URL=turn:${EXTERNAL_IP}:${TURN_PORT}
+      - TURN_USER=${TURN_USER}
+      - TURN_PASS=${TURN_PASS}
+    depends_on:
+      - mlworker
+      - coturn
+    networks:
+      - webrtcnet
+
+  mlworker:
+    build:
+      context: .  # ← КОРЕНЬ проекта (где лежит proto/)
+      dockerfile: ml_service/Dockerfile
+    container_name: ml_worker
+    env_file: .env
+    expose:
+      - "50051"
+    # ports:   
+    #   - "50051:50051"               # доступен внутри сети
+    networks:
+      - webrtcnet
+
+  coturn:
+    image: instrumentisto/coturn
+    container_name: coturn
+    restart: always
+    ports:
+      - "3478:3478/udp"            # STUN/TURN discovery
+      - "5349:5349/tcp"            # TURN over TLS (fallback)
+    command: >
+      --no-cli
+      --lt-cred-mech
+      --user user:pass
+      --realm webrtc.local
+      --external-ip=${EXTERNAL_IP}
+      --no-tls
+      --no-dtls
+      --log-file=stdout
+    networks:
+      - webrtcnet
+
+networks:
+  webrtcnet:
+    driver: bridge
