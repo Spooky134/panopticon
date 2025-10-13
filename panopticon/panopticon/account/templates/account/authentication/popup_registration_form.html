@@ -1,0 +1,38 @@
+<div class="popup-container">
+    <form class="popup-reg-form" method="post">
+        {% csrf_token %}
+        <div class="mb-1 first">
+            <h1>JOIN BOOKER</h1>
+            <i class="fas fa-times close-popup"></i>
+        </div>
+        <div class="mb-2">
+            <label class="form-label" for="email">{{ form.email.label }}</label>
+            {{ form.email }}
+        </div>
+        <div class="mb-2">
+            <label class="form-label" for="username">{{ form.username.label }}</label>
+            {{ form.username }}
+        </div>
+        <div class="mb-2">
+            <label class="form-label" for="password">{{ form.password.label }}</label>
+            {{ form.password }}
+        </div>
+        <div class="mb-2">
+            <label class="form-check-label">
+                <input class="form-check-input" type="checkbox" name="terms_of_use" value=False>
+                I'm at least 16 years old and accept the <a href="#" class="link" target="_blank">Terms of Use</a>.
+            </label>
+        </div>
+        <div class="mb-2">
+            <label class="form-check-label">
+                <input class="form-check-input" type="checkbox" name="terms_of_use" value=False>
+                I accept the <a href="#" class="link" target="_blank">Privacy Policy</a> and consent to the processing of my personal imformation in accordance with it.
+            </label>
+        </div>
+        <div class="form-row">
+            <button type="submit">
+                SIGN UP
+            </button>
+        </div>
+    </form>
+</div>

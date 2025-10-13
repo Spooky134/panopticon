@@ -1,0 +1,65 @@
+{% extends "account/authentication/base.html" %}
+
+{% block title %}
+    Registration
+{% endblock %}
+
+{% block content %}
+    <form class="registration-form" method="post">
+        {% csrf_token %}
+        <div class="container mt-5">
+            <div class="row justify-content-center">
+                <div class="col-md-6">
+                    <h2 class="text-center">Registration</h2>
+                    <div class="form-group">
+                        <label for="username">Username</label>
+                        {{ form.username }}
+                        {% if form.username.errors %}
+                            <div class="text-danger">
+                                {{ form.username.errors|striptags }}
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="form-group">
+                        <label for="email">Email</label>
+                        {{ form.email }}
+                    </div>
+                    <div class="form-group">
+                        <label for="password">Password</label>
+                        {{ form.password }}
+                        {% if form.password.errors %}
+                            <div class="text-danger">
+                                {% for error in form.password.errors %}
+                                    <p>{{ error }}</p>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="terms_of_use" id="terms_of_use" value="">
+                        <label class="form-check-label" for="terms_of_use">
+                            I'm at least 16 years old and accept the <a href="#" class="link" target="_blank">Terms of Use</a>.
+                        </label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="privacy_policy" id="privacy_policy" value="">
+                        <label class="form-check-label" for="privacy_policy">
+                            I accept the <a href="#" class="link" target="_blank">Privacy Policy</a> and consent to the processing of my personal imformation in accordance with it.
+                        </label>
+                    </div>
+                    <div class="form-group">
+                        <button type="submit" class="btn btn-primary btn-block">SIGN UP</button>
+                    </div>
+                    <div class="form-group">
+                        <label>Already have an account? <a href="{% url 'account:login' %}">Login</a>.</label>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+
+    <!-- Подключение Bootstrap JS и jQuery -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.2/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+{% endblock %}

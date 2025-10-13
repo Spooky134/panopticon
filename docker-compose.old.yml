@@ -1,0 +1,45 @@
+version: '3.8'
+
+services:
+  # ml-service:
+  #   build:
+  #     context: .  # ← КОРЕНЬ проекта (где лежит proto/)
+  #     dockerfile: ml_service/Dockerfile
+  #   container_name: ml-service
+  #   ports:
+  #     - "50051:50051"
+  #   env_file: .env
+  #   environment:
+  #     - PYTHONUNBUFFERED=1
+  #     - GRPC_VERBOSITY=INFO
+  #   # volumes:
+  #   #   - .:/app
+  #   restart: unless-stopped
+  #   networks:
+  #     - main-network
+  #   healthcheck:
+  #     test: ["CMD", "python", "-c", "import grpc; channel = grpc.insecure_channel('localhost:50051'); stub = ml_worker_pb2_grpc.MLServiceStub(channel); exit(0)"]
+  #     interval: 30s
+  #     timeout: 10s
+  #     retries: 3
+  #     start_period: 40s
+
+  vstream-service:
+    build:
+      context: .
+      dockerfile: vstream_service/Dockerfile
+    env_file: .env
+    ports:
+      - "8000:8000"           # HTTP порт
+      - "10000-10010:10000-10010/udp"  # WebRTC media ports
+    container_name: vstream_service
+    environment:
+      - PYTHONUNBUFFERED=1
+      - GRPC_VERBOSITY=INFO  
+    restart: unless-stopped
+    networks:
+      - main-network
+
+networks:
+  main-network:
+    driver: bridge

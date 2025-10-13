@@ -7,7 +7,7 @@ from api.routers import root
 from config import settings
 
 
-app = FastAPI(title=settings.PROJECT_NAME, debug=settings.DEBUG)
+app = FastAPI(title=settings.VSTREAM_SERVICE_NAME, debug=settings.VSTREAM_DEBUG)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],

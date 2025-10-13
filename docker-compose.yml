@@ -1,45 +1,108 @@
-version: '3.8'
-
 services:
-  # ml-service:
-  #   build:
-  #     context: .  # ← КОРЕНЬ проекта (где лежит proto/)
-  #     dockerfile: ml_service/Dockerfile
-  #   container_name: ml-service
-  #   ports:
-  #     - "50051:50051"
-  #   env_file: .env
-  #   environment:
-  #     - PYTHONUNBUFFERED=1
-  #     - GRPC_VERBOSITY=INFO
-  #   # volumes:
-  #   #   - .:/app
-  #   restart: unless-stopped
-  #   networks:
-  #     - main-network
-  #   healthcheck:
-  #     test: ["CMD", "python", "-c", "import grpc; channel = grpc.insecure_channel('localhost:50051'); stub = ml_worker_pb2_grpc.MLServiceStub(channel); exit(0)"]
-  #     interval: 30s
-  #     timeout: 10s
-  #     retries: 3
-  #     start_period: 40s
+  panopticon:
+    build:
+      context: .
+      dockerfile: panopticon/Dockerfile
+    container_name: panopticon
+    ports:
+      - "${PANOPTICON_PORT}:8000"
+    env_file: .env
+    environment:
+      - PANOPTICON_NAME=${PANOPTICON_NAME}
+      # - PANOPTICON_HOST=${PANOPTICON_HOST}
+      # - PANOPTICON_PORT=${PANOPTICON_PORT}
 
-  vstream-service:
+      - VSTREAM_SERVICE_URL=${VSTREAM_SERVICE_HOST}:${VSTREAM_SERVICE_PORT}
+
+      - TURN_URL=turn:${EXTERNAL_IP}:${TURN_PORT}
+      - TURN_USERNAME=${TURN_USERNAME}
+      - TURN_PASSWORD=${TURN_PASSWORD}
+    volumes:
+      - ./panopticon/panopticon:/app
+    command: python manage.py runserver 0.0.0.0:8000
+    networks:
+      - webrtcnet
+    restart: unless-stopped
+  vstream_service:
     build:
       context: .
       dockerfile: vstream_service/Dockerfile
-    env_file: .env
-    ports:
-      - "8000:8000"           # HTTP порт
-      - "10000-10010:10000-10010/udp"  # WebRTC media ports
     container_name: vstream_service
+    ports:
+      - "${VSTREAM_SERVICE_PORT}:8000"                # signaling REST
+    env_file: .env
     environment:
-      - PYTHONUNBUFFERED=1
-      - GRPC_VERBOSITY=INFO  
-    restart: unless-stopped
+      - VSTREAM_SERVICE_NAME=${VSTREAM_SERVICE_NAME}
+      - VSTREAM_SERVICE_SECRET_KEY=${VSTREAM_SERVICE_SECRET_KEY}
+      - VSTREAM_SERVICE_ALGORITHM=${VSTREAM_SERVICE_ALGORITHM}
+      - VSTREAM_SERVICE_ACCESS_TOKEN_EXPIRE_MINUTES=${VSTREAM_SERVICE_ACCESS_TOKEN_EXPIRE_MINUTES}
+      - VSTREAM_CORS_ALLOWED_ORIGINS=${VSTREAM_CORS_ALLOWED_ORIGINS}
+      - VSTREAM_DEBUG=${VSTREAM_DEBUG}
+
+      - ML_SERVICE_HOST=${ML_SERVICE_HOST}
+      - ML_SERVICE_PORT=${ML_SERVICE_PORT}
+
+      - TURN_URL=turn:${EXTERNAL_IP}:${TURN_PORT}
+      - TURN_USERNAME=${TURN_USERNAME}
+      - TURN_PASSWORD=${TURN_PASSWORD}
+    depends_on:
+      - ml_service
+      - coturn
     networks:
-      - main-network
+      - webrtcnet
+
+  ml_service:
+    build:
+      context: .  # ← КОРЕНЬ проекта (где лежит proto/)
+      dockerfile: ml_service/Dockerfile
+    container_name: ml_service
+    env_file: .env
+    environment:
+      - ML_SERVICE_HOST=${ML_SERVICE_HOST}
+      - ML_SERVICE_PORT=${ML_SERVICE_PORT}
+    expose:
+      - "${ML_SERVICE_PORT}"
+    # ports:   
+    #   - "50051:50051"               # доступен внутри сети
+    networks:
+      - webrtcnet
+
+  coturn:
+    image: instrumentisto/coturn
+    container_name: coturn
+    restart: always
+    ports:
+      - "3478:3478/udp"            # STUN/TURN discovery
+      - "5349:5349/tcp"            # TURN over TLS (fallback)
+    command: >
+      --no-cli
+      --lt-cred-mech
+      --user user:pass
+      --realm webrtc.local
+      --external-ip=${EXTERNAL_IP}
+      --no-tls
+      --no-dtls
+      --log-file=stdout
+    networks:
+      - webrtcnet
+
+
+    # minio:
+    #   image: minio/minio
+    #   container_name: minio
+    #   ports:
+    #     - "9000:9000"  # S3 API
+    #     - "9001:9001"  # Веб-консоль
+    #   environment:
+    #     MINIO_ROOT_USER: minioadmin
+    #     MINIO_ROOT_PASSWORD: minioadmin
+    #   volumes:
+    #     - minio_data:/data  # Постоянное хранилище данных
+    #   command: server /data --console-address ":9001"
+
+# volumes:
+#   minio_data:
 
 networks:
-  main-network:
+  webrtcnet:
     driver: bridge

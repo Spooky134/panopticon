@@ -16,9 +16,9 @@ class StreamService:
         offer = RTCSessionDescription(sdp_data["sdp"], sdp_data["type"])
         ice_servers = [
             RTCIceServer(urls=["stun:stun.l.google.com:19302"]),
-            RTCIceServer(urls=[settings.TURN_URL], username=settings.TURN_USER, credential=settings.TURN_PASS),
+            RTCIceServer(urls=[settings.TURN_URL], username=settings.TURN_USERNAME, credential=settings.TURN_PASSWORD),
         ]
-        print(settings.TURN_URL)
+
         rtc_config = RTCConfiguration(iceServers=ice_servers)
         pc = RTCPeerConnection(rtc_config)
 
@@ -59,7 +59,7 @@ class StreamService:
             "type": pc.localDescription.type,
             "iceServers": [
                 {"urls": ["stun:stun.l.google.com:19302"]},
-                {"urls": [settings.TURN_URL], "username": settings.TURN_USER, "credential": settings.TURN_PASS}
+                {"urls": [settings.TURN_URL], "username": settings.TURN_USERNAME, "credential": settings.TURN_PASSWORD}
             ]
         }
 

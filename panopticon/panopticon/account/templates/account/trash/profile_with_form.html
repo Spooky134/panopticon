@@ -1,0 +1,48 @@
+{% extends "account/base.html" %}
+
+{% block title %}
+    profile
+{% endblock %}
+
+{% block body %}
+    <section>
+        <div class="profile-container">
+            <div class="profile-header">
+                <h1>User profile</h1>
+            </div>
+            <div class="profile-info">
+                <form method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <div class="mb-2">
+                        <label for="username">Username:</label>
+                        <input type="text" id="username" name="username" value="{{ user.username }}" required>
+                    </div>
+                    <div class="mb-2">
+                        <label for="email">Email:</label>
+                        <input type="email" id="email" name="email" value="{{ user.email }}" required>
+                    </div>
+                    <div class="mb-2">
+                        <label for="first_name">Name:</label>
+                        <input type="text" id="first_name" name="first_name" value="{{ user.first_name }}">
+                    </div>
+                    <div class="mb-2">
+                        <label for="last_name">Surname:</label>
+                        <input type="text" id="last_name" name="last_name" value="{{ user.last_name }}">
+                    </div>
+                    <div class="mb-2">
+                        <label for="bio">About:</label>
+                        <textarea id="bio" name="bio" rows="4">{{ user.profile.bio }}</textarea>
+                    </div>
+                    <div class="mb-2">
+                        <label for="avatar">Avatar:</label>
+                        <input type="file" id="avatar" name="avatar">
+                    </div> 
+                </form>
+                <form method="post" action="{% url 'account:logout' %}">
+                    {% csrf_token %}
+                    <button type="submit">Logout</button>
+                </form>
+            </div>
+        </div>
+    </section>
+{% endblock %}

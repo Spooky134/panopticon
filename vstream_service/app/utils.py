@@ -14,7 +14,7 @@ from config import settings
 class GrpcVideoProcessor:
     def __init__(self, session_id: str):
         self.session_id = session_id
-        self.channel = grpc.aio.insecure_channel(f'{settings.ML_WORKER_HOST}:{settings.ML_WORKER_PORT}')
+        self.channel = grpc.aio.insecure_channel(f'{settings.ML_SERVICE_HOST}:{settings.ML_SERVICE_PORT}')
         self.stub = ml_worker_pb2_grpc.MLServiceStub(self.channel)
         self.request_queue = asyncio.Queue()
         self.response_queue = asyncio.Queue()

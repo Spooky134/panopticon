@@ -1,0 +1,39 @@
+{% extends "account/profile/base.html" %}
+
+{% block title %}
+    Profile
+{% endblock %}
+
+
+{% block body %}
+
+    <div class="profile-header">
+        {% if profile.photo %}
+            <img src="{{ profile.photo.url }}" alt="User Photo" id="profileImage" class="profile-photo">
+        {% else %}
+            <img src="/static/images/default.png" alt="User Photo" id="profileImage" class="profile-photo">
+        {% endif %}
+        <h3 class="mt-3">{{ user.username }}</h3>
+        <p class="status status-active"><i class="fas fa-circle me-1"></i> Active</p>
+    </div>
+    <!-- Profile View Mode -->
+    <div class="profile-body" id="profile-view">
+        <h5>User Information</h5>
+        <div class="profile-info">
+            <p><strong>ID:</strong> #{{ user.id }}</p>
+            <p><strong>Username:</strong> {{ user.username }}</p>
+            <p><strong>Last Name:</strong> {{ user.last_name }}</p>
+            <p><strong>First Name:</strong> {{ user.first_name }}</p>
+            <p><strong>Email:</strong> {{ user.email }}</p>
+            <p><strong>Phone:</strong> {{ profile.phone }}</p>
+        </div>
+      <!-- Edit Profile Button -->
+        <form method="get" action="{% url 'account:profile_edit' %}">
+            <button class="btn btn-secondary w-100 mt-4">
+                <i class="fas fa-edit me-2"></i>Edit profile
+            </button>
+        </form>
+        <a href="{% url 'account:change_password' %}" class="btn btn-secondary w-100 mt-4">Change password</a>
+    </div>
+
+{% endblock%}

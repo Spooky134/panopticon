@@ -1,0 +1,60 @@
+{% extends "account/profile/base.html" %}
+
+{% block title %}
+    Profile edit
+{% endblock %}
+
+{% block body %}
+    <div class="profile-header">
+        {% if profile_form.instance.photo %}
+            <img src={{ profile_form.instance.photo.url }} alt="User Photo" id="profileImage" class="profile-photo">
+        {% else %}
+            <img src="/static/images/default.png" alt="User Photo" id="profileImage" class="profile-photo">
+        {% endif %}
+        <h3 class="mt-3">{{ user.username }}</h3>
+        <p class="status status-active"><i class="fas fa-circle me-1"></i> Active</p>
+    </div>
+    <div class="profile-body" id="profile-edit">
+        <h5 class="text-center">Edit User Information</h5>
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            <div class="mb-3">
+                <label for="uploadImage" class="form-label"><strong>Upload New Photo</strong></label>
+                {% if profile_form.instance.photo %}
+                    <p>Currently: <a href="{{ profile_form.instance.photo.url }}" target='_blank'>{{ profile_form.instance.photo }}</a></p>
+                {% else %}
+                    <p>Currently:</p>
+                {% endif %}
+                {{ profile_form.photo }}
+            </div>
+            <div class="mb-3">
+                <label for="userName" class="form-label"><strong>Username</strong></label>
+                {{ user_form.username }}
+            </div>
+            <div class="mb-3">
+                <label for="lastName" class="form-label"><strong>Last Name</strong></label>
+                {{ user_form.last_name }}
+            </div>
+            <div class="mb-3">
+                <label for="firstName" class="form-label"><strong>First Name</strong></label>
+                {{ user_form.first_name }}
+            </div>
+            <div class="mb-3">
+                <label for="email" class="form-label"><strong>Email</strong></label>
+                {{ user_form.email }}
+            </div>
+            <div class="mb-3">
+                <label for="phone" class="form-label"><strong>Phone</strong></label>
+                {{ profile_form.phone }}
+            </div>
+            <div class="d-flex gap-3 mt-4">
+                <button type="submit" class="btn btn-primary w-100">
+                  <i class="fas fa-save me-2"></i>Save Changes
+                </button>
+                <button type="reset" class="btn btn-secondary w-100">
+                  <i class="fas fa-undo me-2"></i>Reset Changes
+                </button>
+            </div>
+        </form>
+    </div>
+{% endblock %}
