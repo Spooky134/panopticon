@@ -2,7 +2,7 @@ from aiortc import RTCPeerConnection, RTCSessionDescription, RTCConfiguration, R
 import asyncio
 from fastapi import BackgroundTasks
 
-from app.config import settings
+from config import settings
 from utils import GrpcVideoProcessor, VideoTransformTrack
 import uuid
 
@@ -11,7 +11,7 @@ class StreamService:
     def __init__(self):
         self.pcs = set()
         self.session_processors = {}
-    
+
     async def offer(self, sdp_data: dict, background_tasks: BackgroundTasks) -> dict:
         offer = RTCSessionDescription(sdp_data["sdp"], sdp_data["type"])
         ice_servers = [
@@ -24,7 +24,6 @@ class StreamService:
 
         self.pcs.add(pc)
 
-
         # Создаем уникальную сессию для этого подключения
         session_id = str(uuid.uuid4())
         grpc_processor = GrpcVideoProcessor(session_id)
@@ -33,14 +32,14 @@ class StreamService:
 
         @pc.on("track")
         async def on_track(track):
-            print(f"Получен трек: {track.kind} для сессии { session_id }")
+            print(f"Получен трек: {track.kind} для сессии {session_id}")
             if track.kind == "video":
                 transformed_track = VideoTransformTrack(track, grpc_processor)  # Создаем измененный поток
                 pc.addTrack(transformed_track)  # Добавляем его в соединение
 
         @pc.on("iceconnectionstatechange")
         async def on_ice_state_change():
-            print(f"ICE connection state: {pc.iceConnectionState} для сессии { session_id }")
+            print(f"ICE connection state: {pc.iceConnectionState} для сессии {session_id}")
             if pc.iceConnectionState in ["failed", "closed", "disconnected"]:
                 # Очищаем ресурсы сессии
                 if session_id in self.session_processors:
@@ -62,7 +61,6 @@ class StreamService:
                 {"urls": [settings.TURN_URL], "username": settings.TURN_USERNAME, "credential": settings.TURN_PASSWORD}
             ]
         }
-
 
     async def __close_peer_connection(self, pc: RTCPeerConnection):
         if pc in self.pcs:

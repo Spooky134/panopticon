@@ -3,7 +3,6 @@ from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 
 from api.routers import stream
-from api.routers import root
 from config import settings
 
 
@@ -18,7 +17,7 @@ app.add_middleware(
 
 api_v1_router = APIRouter(prefix="/v1", tags=["v1"])
 
-api_v1_router.include_router(root.router, tags=["root"])
+# api_v1_router.include_router(root.router, tags=["root"])
 api_v1_router.include_router(stream.router, tags=["stream"])
 
 app.include_router(api_v1_router, prefix="/api")

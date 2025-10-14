@@ -2,8 +2,8 @@ from dotenv import load_dotenv
 
 from pydantic_settings import BaseSettings
 
-# TODO исправить на относительный
-load_dotenv("/Users/andreychvankov/Projects/panopticon/.env")
+# # TODO исправить на относительный
+# load_dotenv("/Users/andreychvankov/Projects/panopticon/.env")
 
 class Settings(BaseSettings):
     VSTREAM_SERVICE_NAME: str
@@ -21,6 +21,12 @@ class Settings(BaseSettings):
 
     ML_SERVICE_HOST: str
     ML_SERVICE_PORT: int
+
+    S3_ENDPOINT_URL: str
+    AWS_ACCESS_KEY_ID: str
+    AWS_SECRET_ACCESS_KEY: str
+    AWS_REGION: str
+    S3_BUCKET: str
 
     
 settings = Settings()
