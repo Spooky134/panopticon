@@ -39,9 +39,19 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 COPY vstream_service/requirements.txt .
+
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY vstream_service/app/ .
+
+COPY proto .
+
+# Создаем protobuf файлы (если они еще не сгенерированы)
+RUN python -m grpc_tools.protoc \
+    --proto_path=. \
+    --python_out=. \
+    --grpc_python_out=. \
+    ml_worker.proto
 
 #EXPOSE 8000
 #EXPOSE 10000-10010/udp
