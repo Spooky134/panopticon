@@ -156,6 +156,7 @@ EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
 
 VSTREAM_SERVICE_URL = env("VSTREAM_SERVICE_URL")  # хост и порт вашего FastAPI сервиса
+VSTREAM_SERVICE_HOST = env("VSTREAM_SERVICE_HOST")  # хост и порт вашего FastAPI сервиса
 
 # TURN server configuration (опционально)
 TURN_URL = env('TURN_URL')

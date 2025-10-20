@@ -2,8 +2,6 @@ from dotenv import load_dotenv
 
 from pydantic_settings import BaseSettings
 
-# # TODO исправить на относительный
-# load_dotenv("/Users/andreychvankov/Projects/panopticon/.env")
 
 class Settings(BaseSettings):
     VSTREAM_SERVICE_NAME: str

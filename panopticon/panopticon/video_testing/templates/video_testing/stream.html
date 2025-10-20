@@ -155,7 +155,7 @@
           const offer = await pc.createOffer();
           await pc.setLocalDescription(offer);
 
-          const SERVER_URL = `http://${CONFIG.vstreamServiceURL}/api/v1/stream/offer`;
+          const SERVER_URL = CONFIG.vstreamServiceURL;
           const response = await fetch(SERVER_URL, {
             method: "POST",
             headers: { "Content-Type": "application/json" },

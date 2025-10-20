@@ -20,7 +20,7 @@ class WebStreamView(View):
 
     def get(self, request):
         context = {
-            'vstream_service_url': settings.VSTREAM_SERVICE_URL,  # например: 'localhost:8000'
+            'vstream_service_url': f'http://{settings.VSTREAM_SERVICE_HOST}/video-testing/test/stream/',  # например: 'localhost:8000'
             'turn_url': settings.TURN_URL,
             'turn_username': settings.TURN_USERNAME,
             'turn_password': settings.TURN_PASSWORD,

@@ -1,11 +1,29 @@
 services:
+  nginx_gateway:
+    build:
+      context: .
+      dockerfile: nginx_gateway/Dockerfile
+    ports:
+      - "80:80"
+      - "443:443"  # если нужен HTTPS
+    depends_on:
+      - panopticon
+      - vstream_service
+    volumes:
+      # - panopticon_static:/var/www/static  # статика Django
+      - ./nginx_gateway/nginx.conf:/etc/nginx/nginx.conf:ro
+    networks:
+      - panopticonnet
   panopticon:
     build:
       context: .
       dockerfile: panopticon/Dockerfile
     container_name: panopticon
-    ports:
-      - "${PANOPTICON_PORT}:8000"
+    # ports:
+   
+    #   - "${PANOPTICON_PORT}:8000"
+    expose:
+      - 8000
     env_file: .env
     environment:
       - PANOPTICON_NAME=${PANOPTICON_NAME}
@@ -13,23 +31,26 @@ services:
       # - PANOPTICON_PORT=${PANOPTICON_PORT}
 
       - VSTREAM_SERVICE_URL=${VSTREAM_SERVICE_HOST}:${VSTREAM_SERVICE_PORT}
-
+      - VSTREAM_SERVICE_HOST=${VSTREAM_SERVICE_HOST}
       - TURN_URL=turn:${EXTERNAL_IP}:${TURN_PORT}
       - TURN_USERNAME=${TURN_USERNAME}
       - TURN_PASSWORD=${TURN_PASSWORD}
     volumes:
       - ./panopticon/panopticon:/app
+      # - panopticon_static:/app/staticfiles 
     command: python manage.py runserver 0.0.0.0:8000
     networks:
-      - webrtcnet
+      - panopticonnet
     restart: unless-stopped
   vstream_service:
     build:
       context: .
       dockerfile: vstream_service/Dockerfile
     container_name: vstream_service
-    ports:
-      - "${VSTREAM_SERVICE_PORT}:8000"                # signaling REST
+    # ports:
+    #   - "${VSTREAM_SERVICE_PORT}:8000"                # signaling REST
+    expose:
+      - 8001
     env_file: .env
     environment:
       - VSTREAM_SERVICE_NAME=${VSTREAM_SERVICE_NAME}
@@ -55,7 +76,7 @@ services:
       - ml_service
       - coturn
     networks:
-      - webrtcnet
+      - panopticonnet
 
   ml_service:
     build:
@@ -71,7 +92,7 @@ services:
     # ports:   
     #   - "50051:50051"               # доступен внутри сети
     networks:
-      - webrtcnet
+      - panopticonnet
 
   coturn:
     image: instrumentisto/coturn
@@ -90,7 +111,7 @@ services:
       --no-dtls
       --log-file=stdout
     networks:
-      - webrtcnet
+      - panopticonnet
 
 
   # minio:
@@ -149,7 +170,10 @@ services:
 
 # volumes:
 #   minio_data:
+# volumes:
+#   panopticon_static:
+
 
 networks:
-  webrtcnet:
+  panopticonnet:
     driver: bridge
