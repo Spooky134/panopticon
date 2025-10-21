@@ -1,11 +1,10 @@
-FROM nginx:latest
+FROM nginx:alpine
 
 RUN rm /etc/nginx/conf.d/default.conf
 
 COPY nginx_gateway/nginx.conf /etc/nginx/conf.d/
 
-RUN apt-get update && apt-get install -y curl && \
-    rm -rf /var/lib/apt/lists/*
+RUN apk add --no-cache curl
 
 # RUN mkdir -p /var/www/static
 
