@@ -1,15 +1,20 @@
 from typing import Type, TypeVar
 from fastapi import Depends
-from fastapi import APIRouter, BackgroundTasks
-# from sqlalchemy.ext.asyncio import AsyncSession
-# from config.database import get_db
-
+# from fastapi import APIRouter, BackgroundTasks
+# # from sqlalchemy.ext.asyncio import AsyncSession
+# # from config.database import get_db
+from utils.connection_manager import ConnectionManager
 
 T = TypeVar('T')
 
 def service_factory(service_class: Type[T]) -> T:
     def _factory() -> T:
         return service_class()
+    return _factory
+
+def stream_service_factory(service_class: Type[T]) -> T:
+    def _factory(connection_manager: ConnectionManager = Depends(ConnectionManager)) -> T:
+        return service_class(connection_manager)
     return _factory
 
 

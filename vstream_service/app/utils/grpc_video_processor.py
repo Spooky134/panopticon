@@ -1,13 +1,10 @@
-from aiortc import RTCPeerConnection, RTCSessionDescription, VideoStreamTrack
 import av
 import cv2
 import numpy as np
 import asyncio
-import uuid
 import grpc
 import ml_worker_pb2
 import ml_worker_pb2_grpc
-from fastapi import BackgroundTasks
 from config import settings
 
 
@@ -70,15 +67,3 @@ class GrpcVideoProcessor:
             print(f"gRPC поток остановлен для {self.session_id}")
         except Exception as e:
             print(f"Ошибка в gRPC потоке для сессии {self.session_id}: {e}")
-
-
-class VideoTransformTrack(VideoStreamTrack):
-    def __init__(self, track, grpc_processor: GrpcVideoProcessor):
-        super().__init__()
-        self.track = track
-        self.grpc_processor = grpc_processor
-
-    async def recv(self):
-        frame = await self.track.recv()
-        # Используем gRPC для обработки вместо локальной обработки
-        return await self.grpc_processor.process_frame(frame)

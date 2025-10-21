@@ -1,17 +1,17 @@
-from aiortc import RTCPeerConnection, RTCSessionDescription, RTCConfiguration, RTCIceServer
+from aiortc import RTCSessionDescription, RTCConfiguration, RTCIceServer
 import asyncio
 from fastapi import BackgroundTasks
-
-from config import settings
-from utils import GrpcVideoProcessor, VideoTransformTrack
 import uuid
 
-
+from config import settings
+from utils.grpc_video_processor import GrpcVideoProcessor
+from utils.video_transform_track import VideoTransformTrack
+from utils.connection_manager import ConnectionManager
 
 
 class StreamService:
-    def __init__(self):
-        self.pcs = set()
+    def __init__(self, connection_manager: ConnectionManager):
+        self.connection_manager = connection_manager
         self.session_processors = {}
 
     async def offer(self, sdp_data: dict, background_tasks: BackgroundTasks) -> dict:
@@ -22,50 +22,45 @@ class StreamService:
         ]
 
         rtc_config = RTCConfiguration(iceServers=ice_servers)
-        pc = RTCPeerConnection(rtc_config)
-
-        self.pcs.add(pc)
 
         # Создаем уникальную сессию для этого подключения
         session_id = str(uuid.uuid4())
+
+        peer_connection = await self.connection_manager.create_connection(session_id=session_id,
+                                                                          rtc_config=rtc_config)
+
         grpc_processor = GrpcVideoProcessor(session_id)
         await grpc_processor.start()
         self.session_processors[session_id] = grpc_processor
 
-        @pc.on("track")
+        @peer_connection.on("track")
         async def on_track(track):
-            print(f"Получен трек: {track.kind} для сессии {session_id}")
+            print(f"Track received: {track.kind} for session {session_id}")
             if track.kind == "video":
                 transformed_track = VideoTransformTrack(track, grpc_processor)  # Создаем измененный поток
-                pc.addTrack(transformed_track)  # Добавляем его в соединение
+                peer_connection.addTrack(transformed_track)  # Добавляем его в соединение
 
-        @pc.on("iceconnectionstatechange")
+        @peer_connection.on("iceconnectionstatechange")
         async def on_ice_state_change():
-            print(f"ICE connection state: {pc.iceConnectionState} для сессии {session_id}")
-            if pc.iceConnectionState in ["failed", "closed", "disconnected"]:
+            print(f"ICE connection state: {peer_connection.iceConnectionState} for session {session_id}")
+            if peer_connection.iceConnectionState in ["failed", "closed", "disconnected"]:
                 # Очищаем ресурсы сессии
                 if session_id in self.session_processors:
                     await self.session_processors[session_id].stop()
                     del self.session_processors[session_id]
-                background_tasks.add_task(self.__close_peer_connection, pc)
+                background_tasks.add_task(self.connection_manager.close_connection, session_id)
 
-        await pc.setRemoteDescription(offer)
+        await peer_connection.setRemoteDescription(offer)
         # Ждем сбора ICE-кандидатов
         await asyncio.sleep(1)
-        answer = await pc.createAnswer()
-        await pc.setLocalDescription(answer)
+        answer = await peer_connection.createAnswer()
+        await peer_connection.setLocalDescription(answer)
 
         return {
-            "sdp": pc.localDescription.sdp,
-            "type": pc.localDescription.type,
+            "sdp": peer_connection.localDescription.sdp,
+            "type": peer_connection.localDescription.type,
             "iceServers": [
                 {"urls": ["stun:stun.l.google.com:19302"]},
                 {"urls": [settings.TURN_URL], "username": settings.TURN_USERNAME, "credential": settings.TURN_PASSWORD}
             ]
         }
-
-    async def __close_peer_connection(self, pc: RTCPeerConnection):
-        if pc in self.pcs:
-            self.pcs.discard(pc)
-        await pc.close()
-        print("PeerConnection закрыт")
