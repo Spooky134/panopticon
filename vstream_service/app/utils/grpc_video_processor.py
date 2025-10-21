@@ -7,6 +7,10 @@ import grpc
 import ml_worker_pb2
 import ml_worker_pb2_grpc
 from config import settings
+from aiortc import VideoStreamTrack
+
+
+
 
 
 class GrpcVideoProcessor:
@@ -63,8 +67,20 @@ class GrpcVideoProcessor:
             async for response in self.stub.StreamFrames(request_generator()):
                 await self.response_queue.put(response.processed_image)
 
-
         except asyncio.CancelledError:
             print(f"gRPC stream is stopped for {self.session_id}")
         except Exception as e:
             print(f"Error in gRPC stream for session {self.session_id}: {e}")
+
+
+
+class VideoTransformTrack(VideoStreamTrack):
+    def __init__(self, track, grpc_processor: GrpcVideoProcessor):
+        super().__init__()
+        self.track = track
+        self.grpc_processor = grpc_processor
+
+    async def recv(self):
+        frame = await self.track.recv()
+        # Используем gRPC для обработки вместо локальной обработки
+        return await self.grpc_processor.process_frame(frame)

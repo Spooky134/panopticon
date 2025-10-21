@@ -1,6 +1,9 @@
+from aiortc import RTCIceServer
 from dotenv import load_dotenv
 
 from pydantic_settings import BaseSettings
+
+
 
 
 class Settings(BaseSettings):
@@ -28,3 +31,8 @@ class Settings(BaseSettings):
 
     
 settings = Settings()
+
+ice_servers = [
+            RTCIceServer(urls=["stun:stun.l.google.com:19302"]),
+            RTCIceServer(urls=[settings.TURN_URL], username=settings.TURN_USERNAME, credential=settings.TURN_PASSWORD),
+        ]

@@ -3,30 +3,28 @@ import asyncio
 from fastapi import BackgroundTasks
 import uuid
 
-from config import settings
-from utils.video_transform_track import VideoTransformTrack
+from config import settings, ice_servers
+
+from utils.grpc_video_processor import VideoTransformTrack
 from utils.connection_manager import ConnectionManager
 from utils.processor_manager import ProcessorManager
 
 
 class StreamService:
-    def __init__(self, connection_manager: ConnectionManager, processor_manager: ProcessorManager):
+    def __init__(self,
+                 connection_manager: ConnectionManager,
+                 processor_manager: ProcessorManager):
         self.connection_manager = connection_manager
         self.processor_manager = processor_manager
 
     async def offer(self, sdp_data: dict, background_tasks: BackgroundTasks) -> dict:
         offer = RTCSessionDescription(sdp_data["sdp"], sdp_data["type"])
-        ice_servers = [
-            RTCIceServer(urls=["stun:stun.l.google.com:19302"]),
-            RTCIceServer(urls=[settings.TURN_URL], username=settings.TURN_USERNAME, credential=settings.TURN_PASSWORD),
-        ]
         rtc_config = RTCConfiguration(iceServers=ice_servers)
 
         # Создаем уникальную сессию для этого подключения
         session_id = str(uuid.uuid4())
 
-        peer_connection = await self.connection_manager.create_connection(session_id=session_id,
-                                                                          rtc_config=rtc_config)
+        peer_connection = await self.connection_manager.create_connection(session_id=session_id, rtc_config=rtc_config)
         grpc_processor = await self.processor_manager.create_processor(session_id=session_id,)
 
 
@@ -53,8 +51,5 @@ class StreamService:
         return {
             "sdp": peer_connection.localDescription.sdp,
             "type": peer_connection.localDescription.type,
-            "iceServers": [
-                {"urls": ["stun:stun.l.google.com:19302"]},
-                {"urls": [settings.TURN_URL], "username": settings.TURN_USERNAME, "credential": settings.TURN_PASSWORD}
-            ]
+            "iceServers": ice_servers
         }
