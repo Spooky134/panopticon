@@ -4,6 +4,7 @@ from fastapi import Depends
 # # from sqlalchemy.ext.asyncio import AsyncSession
 # # from config.database import get_db
 from utils.connection_manager import ConnectionManager
+from utils.processor_manager import ProcessorManager
 
 T = TypeVar('T')
 
@@ -13,8 +14,9 @@ def service_factory(service_class: Type[T]) -> T:
     return _factory
 
 def stream_service_factory(service_class: Type[T]) -> T:
-    def _factory(connection_manager: ConnectionManager = Depends(ConnectionManager)) -> T:
-        return service_class(connection_manager)
+    def _factory(connection_manager: ConnectionManager = Depends(ConnectionManager),
+                 processor_manager: ProcessorManager = Depends(ProcessorManager)) -> T:
+        return service_class(connection_manager, processor_manager)
     return _factory
 
 

@@ -3,6 +3,7 @@ import cv2
 import numpy as np
 import asyncio
 import grpc
+
 import ml_worker_pb2
 import ml_worker_pb2_grpc
 from config import settings
@@ -64,6 +65,6 @@ class GrpcVideoProcessor:
 
 
         except asyncio.CancelledError:
-            print(f"gRPC поток остановлен для {self.session_id}")
+            print(f"gRPC stream is stopped for {self.session_id}")
         except Exception as e:
-            print(f"Ошибка в gRPC потоке для сессии {self.session_id}: {e}")
+            print(f"Error in gRPC stream for session {self.session_id}: {e}")

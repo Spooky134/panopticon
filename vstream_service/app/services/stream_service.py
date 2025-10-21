@@ -4,15 +4,15 @@ from fastapi import BackgroundTasks
 import uuid
 
 from config import settings
-from utils.grpc_video_processor import GrpcVideoProcessor
 from utils.video_transform_track import VideoTransformTrack
 from utils.connection_manager import ConnectionManager
+from utils.processor_manager import ProcessorManager
 
 
 class StreamService:
-    def __init__(self, connection_manager: ConnectionManager):
+    def __init__(self, connection_manager: ConnectionManager, processor_manager: ProcessorManager):
         self.connection_manager = connection_manager
-        self.session_processors = {}
+        self.processor_manager = processor_manager
 
     async def offer(self, sdp_data: dict, background_tasks: BackgroundTasks) -> dict:
         offer = RTCSessionDescription(sdp_data["sdp"], sdp_data["type"])
@@ -20,7 +20,6 @@ class StreamService:
             RTCIceServer(urls=["stun:stun.l.google.com:19302"]),
             RTCIceServer(urls=[settings.TURN_URL], username=settings.TURN_USERNAME, credential=settings.TURN_PASSWORD),
         ]
-
         rtc_config = RTCConfiguration(iceServers=ice_servers)
 
         # Создаем уникальную сессию для этого подключения
@@ -28,10 +27,8 @@ class StreamService:
 
         peer_connection = await self.connection_manager.create_connection(session_id=session_id,
                                                                           rtc_config=rtc_config)
+        grpc_processor = await self.processor_manager.create_processor(session_id=session_id,)
 
-        grpc_processor = GrpcVideoProcessor(session_id)
-        await grpc_processor.start()
-        self.session_processors[session_id] = grpc_processor
 
         @peer_connection.on("track")
         async def on_track(track):
@@ -44,10 +41,7 @@ class StreamService:
         async def on_ice_state_change():
             print(f"ICE connection state: {peer_connection.iceConnectionState} for session {session_id}")
             if peer_connection.iceConnectionState in ["failed", "closed", "disconnected"]:
-                # Очищаем ресурсы сессии
-                if session_id in self.session_processors:
-                    await self.session_processors[session_id].stop()
-                    del self.session_processors[session_id]
+                background_tasks.add_task(self.processor_manager.close_processor, session_id)
                 background_tasks.add_task(self.connection_manager.close_connection, session_id)
 
         await peer_connection.setRemoteDescription(offer)

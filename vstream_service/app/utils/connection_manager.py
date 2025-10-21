@@ -23,4 +23,4 @@ class ConnectionManager:
         pc = self.peer_connections.pop(session_id, None)
         if pc:
             await pc.close()
-        print("PeerConnection закрыт")
+        print("PeerConnection is closed")
