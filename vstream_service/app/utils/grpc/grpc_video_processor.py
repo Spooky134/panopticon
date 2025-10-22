@@ -7,19 +7,16 @@ import grpc
 import ml_worker_pb2
 import ml_worker_pb2_grpc
 from config import settings
-from aiortc import VideoStreamTrack
+from utils.grpc.base_processor import BaseProcessor
 
 
-
-
-
-class GrpcVideoProcessor:
+class GrpcProcessor(BaseProcessor):
     def __init__(self, session_id: str):
         self.session_id = session_id
         self.channel = grpc.aio.insecure_channel(f'{settings.ML_SERVICE_HOST}:{settings.ML_SERVICE_PORT}')
         self.stub = ml_worker_pb2_grpc.MLServiceStub(self.channel)
-        self.request_queue = asyncio.Queue()
-        self.response_queue = asyncio.Queue()
+        self.request_queue = asyncio.Queue(100)
+        self.response_queue = asyncio.Queue(100)
         self.processing_task = None
 
     async def start(self):
@@ -27,9 +24,12 @@ class GrpcVideoProcessor:
         self.processing_task = asyncio.create_task(self._process_stream())
 
     async def stop(self):
-        """Останавливает обработку"""
         if self.processing_task:
             self.processing_task.cancel()
+            try:
+                await self.processing_task
+            except asyncio.CancelledError:
+                pass
         await self.channel.close()
 
     async def process_frame(self, frame) -> av.VideoFrame:
@@ -73,14 +73,3 @@ class GrpcVideoProcessor:
             print(f"Error in gRPC stream for session {self.session_id}: {e}")
 
 
-
-class VideoTransformTrack(VideoStreamTrack):
-    def __init__(self, track, grpc_processor: GrpcVideoProcessor):
-        super().__init__()
-        self.track = track
-        self.grpc_processor = grpc_processor
-
-    async def recv(self):
-        frame = await self.track.recv()
-        # Используем gRPC для обработки вместо локальной обработки
-        return await self.grpc_processor.process_frame(frame)

@@ -1,13 +1,13 @@
-from aiortc import RTCSessionDescription, RTCConfiguration, RTCIceServer
+from aiortc import RTCSessionDescription, RTCConfiguration, RTCPeerConnection
 import asyncio
 from fastapi import BackgroundTasks
 import uuid
 
-from config import settings, ice_servers
+from config import ice_servers
 
-from utils.grpc_video_processor import VideoTransformTrack
-from utils.connection_manager import ConnectionManager
-from utils.processor_manager import ProcessorManager
+from utils.webrtc.connection_manager import ConnectionManager
+from utils.grpc.processor_manager import ProcessorManager
+from utils.webrtc.video_transform_track import VideoTransformTrack
 
 
 class StreamService:
@@ -53,3 +53,12 @@ class StreamService:
             "type": peer_connection.localDescription.type,
             "iceServers": ice_servers
         }
+
+    # async def _create_peer_connection(self, session_id: str) -> RTCPeerConnection:
+    #     rtc_config = RTCConfiguration(iceServers=ice_servers)
+    #     peer_connection = await self.connection_manager.create_connection(session_id=session_id, rtc_config=rtc_config)
+    #
+    #     return peer_connection
+    #
+    # async def _setup_event_handlers(self, peer_connection: RTCPeerConnection, processor, session_id: str, ):
+    #     async def on_track(track):
