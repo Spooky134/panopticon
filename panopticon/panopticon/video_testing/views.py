@@ -1,15 +1,3 @@
-from django.views import View
-from django.http import JsonResponse
-from django.shortcuts import render
-from aiortc import RTCPeerConnection, MediaStreamTrack
-import os
-from datetime import datetime
-from django.utils.decorators import method_decorator
-from django.views.decorators.csrf import csrf_exempt
-import json
-import asyncio
-
-from django.views.generic import TemplateView
 from django.shortcuts import render
 from django.views import View
 from django.conf import settings

@@ -13,34 +13,38 @@ services:
       # - panopticon_static:/var/www/static  # статика Django
       - ./gateway/nginx.conf:/etc/nginx/nginx.conf:ro
     networks:
-      - panopticonnet
+      - mainnet
   panopticon:
     build:
       context: .
       dockerfile: panopticon/Dockerfile
     container_name: panopticon
-    # ports:
-   
-    #   - "${PANOPTICON_PORT}:8000"
     expose:
-      - 8000
+      - ${PANOPTICON_PORT}
     env_file: .env
     environment:
       - PANOPTICON_NAME=${PANOPTICON_NAME}
-      # - PANOPTICON_HOST=${PANOPTICON_HOST}
-      # - PANOPTICON_PORT=${PANOPTICON_PORT}
-
+      
       - VSTREAM_SERVICE_URL=${VSTREAM_SERVICE_HOST}:${VSTREAM_SERVICE_PORT}
       - VSTREAM_SERVICE_HOST=${VSTREAM_SERVICE_HOST}
+      
       - TURN_URL=turn:${EXTERNAL_IP}:${TURN_PORT}
       - TURN_USERNAME=${TURN_USERNAME}
       - TURN_PASSWORD=${TURN_PASSWORD}
+
+      - POSTGRES_HOST=${POSTGRES_HOST}
+      - POSTGRES_PORT=${POSTGRES_PORT}
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD${POSTGRES_PASSWORD}
     volumes:
       - ./panopticon/panopticon:/app
       # - panopticon_static:/app/staticfiles 
     command: python manage.py runserver 0.0.0.0:8000
+    depends_on:
+      - database
     networks:
-      - panopticonnet
+      - mainnet
     restart: unless-stopped
   vstream_service:
     build:
@@ -50,7 +54,7 @@ services:
     # ports:
     #   - "${VSTREAM_SERVICE_PORT}:8000"                # signaling REST
     expose:
-      - 8001
+      - ${VSTREAM_SERVICE_HOST}
     env_file: .env
     environment:
       - VSTREAM_SERVICE_NAME=${VSTREAM_SERVICE_NAME}
@@ -76,7 +80,7 @@ services:
       - ml_service
       - coturn
     networks:
-      - panopticonnet
+      - mainnet
 
   ml_service:
     build:
@@ -92,7 +96,7 @@ services:
     # ports:   
     #   - "50051:50051"               # доступен внутри сети
     networks:
-      - panopticonnet
+      - mainnet
 
   coturn:
     image: instrumentisto/coturn
@@ -111,9 +115,22 @@ services:
       --no-dtls
       --log-file=stdout
     networks:
-      - panopticonnet
+      - mainnet
 
-
+  database:
+    image: postgres:13
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+    # ports:
+    #   - "${POSTGRES_PORT}:5432"
+    expose:
+      - ${POSTGRES_PORT}
+    networks:
+      - mainnet
   # minio:
   #   image: minio/minio
   #   container_name: minio
@@ -172,8 +189,10 @@ services:
 #   minio_data:
 # volumes:
 #   panopticon_static:
+volumes:
+  postgres_data:
 
 
 networks:
-  panopticonnet:
+  mainnet:
     driver: bridge

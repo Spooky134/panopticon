@@ -20,10 +20,20 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Пытаемся прочитать .env, но если его нет - ок
 env.read_env(BASE_DIR / '.env')
 
-from django.conf import settings
+VSTREAM_SERVICE_URL = env("VSTREAM_SERVICE_URL")  # хост и порт вашего FastAPI сервиса
+VSTREAM_SERVICE_HOST = env("VSTREAM_SERVICE_HOST")  # хост и порт вашего FastAPI сервиса
 
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
-BASE_DIR = Path(__file__).resolve().parent.parent
+# TURN server configuration (опционально)
+TURN_URL = env('TURN_URL')
+TURN_USERNAME = env('TURN_USERNAME')
+TURN_PASSWORD = env('TURN_PASSWORD')
+
+POSTGRES_DB=env('POSTGRES_DB')
+POSTGRES_USER=env('POSTGRES_USER')
+POSTGRES_PASSWORD=env('POSTGRES_PASSWORD')
+POSTGRES_HOST=env('POSTGRES_HOST')
+POSTGRES_PORT=env('POSTGRES_PORT')
+
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
@@ -95,10 +105,24 @@ WSGI_APPLICATION = 'panopticon.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.sqlite3',
+#         'NAME': BASE_DIR / 'db.sqlite3',
+#     }
+# }
+
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': POSTGRES_DB,
+        'USER': POSTGRES_USER,
+        'PASSWORD': POSTGRES_PASSWORD,
+        'HOST': POSTGRES_HOST,  # имя сервиса в docker-compose
+        'PORT': POSTGRES_PORT,
+        'OPTIONS': {
+            'server_side_binding': True,  # для psycopg3
+        }
     }
 }
 
@@ -155,13 +179,7 @@ EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
 
 
-VSTREAM_SERVICE_URL = env("VSTREAM_SERVICE_URL")  # хост и порт вашего FastAPI сервиса
-VSTREAM_SERVICE_HOST = env("VSTREAM_SERVICE_HOST")  # хост и порт вашего FastAPI сервиса
 
-# TURN server configuration (опционально)
-TURN_URL = env('TURN_URL')
-TURN_USERNAME = env('TURN_USERNAME')
-TURN_PASSWORD = env('TURN_PASSWORD')
 
 # EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 # EMAIL_HOST = 'smtp.gmail.com'
