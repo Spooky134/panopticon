@@ -1,13 +1,14 @@
-from aiortc import RTCSessionDescription, RTCConfiguration, RTCPeerConnection
+from aiortc import RTCSessionDescription, RTCConfiguration
 import asyncio
 from fastapi import BackgroundTasks
 import uuid
 
-from config import ice_servers
+from config.config import ice_servers
 
-from utils.webrtc.connection_manager import ConnectionManager
-from utils.grpc.processor_manager import ProcessorManager
-from utils.webrtc.video_transform_track import VideoTransformTrack
+from grpc_client.processor_manager import ProcessorManager
+
+from webrtc.connection_manager import ConnectionManager
+from webrtc.video_transform_track import VideoTransformTrack
 
 
 class StreamService:

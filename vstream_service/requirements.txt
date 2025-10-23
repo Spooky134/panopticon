@@ -11,7 +11,6 @@ annotated-types==0.7.0
 anyio==4.10.0
 attrs==25.4.0
 av==14.4.0
-boto3==1.40.18
 botocore==1.40.18
 cffi==2.0.0
 click==8.3.0
@@ -26,7 +25,6 @@ grpcio-tools==1.75.0
 h11==0.16.0
 idna==3.10
 ifaddr==0.2.0
-Jinja2==3.1.6
 jmespath==1.0.1
 MarkupSafe==3.0.2
 multidict==6.7.0

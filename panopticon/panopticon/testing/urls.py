@@ -4,7 +4,7 @@ from django.conf.urls.static import static
 from .views import WebStreamView
 
 
-app_name = 'video_testing'
+app_name = 'testing'
 
 urlpatterns = [
     # path('login/', AccountLoginView.as_view(), name='login'),

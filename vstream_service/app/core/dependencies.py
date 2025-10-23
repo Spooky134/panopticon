@@ -3,8 +3,8 @@ from fastapi import Depends
 # from fastapi import APIRouter, BackgroundTasks
 # # from sqlalchemy.ext.asyncio import AsyncSession
 # # from config.database import get_db
-from utils.webrtc.connection_manager import ConnectionManager
-from utils.grpc.processor_manager import ProcessorManager
+from webrtc.connection_manager import ConnectionManager
+from grpc_client.processor_manager import ProcessorManager
 
 T = TypeVar('T')
 

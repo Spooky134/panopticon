@@ -1,6 +1,6 @@
 from fastapi import APIRouter, BackgroundTasks, Depends
 from services.stream_service import StreamService
-from dependencies import service_factory, stream_service_factory
+from core.dependencies import stream_service_factory
 
 router = APIRouter(prefix="/stream", tags=["stream"])
 

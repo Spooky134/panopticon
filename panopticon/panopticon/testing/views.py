@@ -13,12 +13,12 @@ class WebStreamView(View):
             'turn_username': settings.TURN_USERNAME,
             'turn_password': settings.TURN_PASSWORD,
         }
-        return render(request, 'video_testing/stream.html', context)
+        return render(request, 'testing/stream.html', context)
 
 
 
 # class VideoStreamView(TemplateView):
-#     template_name = "video_testing/stream.html"
+#     template_name = "testing/stream.html"
 #     # login_url = '/account/login/'
 #
 #     # def get_context_data(self, **kwargs):

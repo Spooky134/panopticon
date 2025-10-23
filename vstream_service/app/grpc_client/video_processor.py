@@ -6,11 +6,11 @@ import grpc
 
 import ml_worker_pb2
 import ml_worker_pb2_grpc
-from config import settings
-from utils.grpc.base_processor import BaseProcessor
+from config.config import settings
+from grpc_client.base_processor import BaseProcessor
 
 
-class GrpcProcessor(BaseProcessor):
+class VideoProcessor(BaseProcessor):
     def __init__(self, session_id: str):
         self.session_id = session_id
         self.channel = grpc.aio.insecure_channel(f'{settings.ML_SERVICE_HOST}:{settings.ML_SERVICE_PORT}')

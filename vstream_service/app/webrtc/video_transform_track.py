@@ -1,6 +1,6 @@
 import av
 from aiortc import VideoStreamTrack
-from utils.grpc.base_processor import BaseProcessor
+from grpc_client.base_processor import BaseProcessor
 
 
 class VideoTransformTrack(VideoStreamTrack):

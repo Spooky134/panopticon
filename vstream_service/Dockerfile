@@ -27,7 +27,3 @@ RUN python -m grpc_tools.protoc \
     --python_out=. \
     --grpc_python_out=. \
     ml_worker.proto
-
-
-
-CMD ["python", "main.py"]

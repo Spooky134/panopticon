@@ -38,9 +38,3 @@ RUN python -m grpc_tools.protoc \
     --python_out=. \
     --grpc_python_out=. \
     ml_worker.proto
-
-# Открываем порт gRPC
-EXPOSE 50051
-
-# Запускаем сервер
-CMD ["python", "server.py"]

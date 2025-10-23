@@ -68,7 +68,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'account.apps.AccountConfig',
-    'video_testing.apps.VideoTestingConfig',
+    'testing.apps.TestingConfig',
 ]
 
 MIDDLEWARE = [

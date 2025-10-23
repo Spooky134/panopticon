@@ -5,7 +5,7 @@ services:
       dockerfile: gateway/Dockerfile
     ports:
       - "80:80"
-      - "443:443"  # если нужен HTTPS
+      - "443:443" #https
     depends_on:
       - panopticon
       - vstream_service
@@ -19,8 +19,6 @@ services:
       context: .
       dockerfile: panopticon/Dockerfile
     container_name: panopticon
-    expose:
-      - ${PANOPTICON_PORT}
     env_file: .env
     environment:
       - PANOPTICON_NAME=${PANOPTICON_NAME}
@@ -39,10 +37,12 @@ services:
       - POSTGRES_PASSWORD${POSTGRES_PASSWORD}
     volumes:
       - ./panopticon/panopticon:/app
-      # - panopticon_static:/app/staticfiles 
-    command: python manage.py runserver 0.0.0.0:8000
+      - ./panopticon/static:/app/staticfiles 
     depends_on:
       - database
+    expose:
+      - ${PANOPTICON_PORT}
+    command: python manage.py runserver 0.0.0.0:${PANOPTICON_PORT}
     networks:
       - mainnet
     restart: unless-stopped
@@ -51,10 +51,6 @@ services:
       context: .
       dockerfile: vstream_service/Dockerfile
     container_name: vstream_service
-    # ports:
-    #   - "${VSTREAM_SERVICE_PORT}:8000"                # signaling REST
-    expose:
-      - ${VSTREAM_SERVICE_HOST}
     env_file: .env
     environment:
       - VSTREAM_SERVICE_NAME=${VSTREAM_SERVICE_NAME}
@@ -79,12 +75,15 @@ services:
     depends_on:
       - ml_service
       - coturn
+    expose:
+      - ${VSTREAM_SERVICE_PORT}
+    command: uvicorn main:app --host 0.0.0.0 --port ${VSTREAM_SERVICE_PORT}
     networks:
       - mainnet
 
   ml_service:
     build:
-      context: .  # ← КОРЕНЬ проекта (где лежит proto/)
+      context: .
       dockerfile: ml_service/Dockerfile
     container_name: ml_service
     env_file: .env
@@ -93,8 +92,7 @@ services:
       - ML_SERVICE_PORT=${ML_SERVICE_PORT}
     expose:
       - "${ML_SERVICE_PORT}"
-    # ports:   
-    #   - "50051:50051"               # доступен внутри сети
+    command: python server.py
     networks:
       - mainnet
 
@@ -125,8 +123,8 @@ services:
       - POSTGRES_DB=${POSTGRES_DB}
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-    # ports:
-    #   - "${POSTGRES_PORT}:5432"
+    ports:
+      - "${POSTGRES_PORT}:5432"
     expose:
       - ${POSTGRES_PORT}
     networks:
@@ -187,10 +185,10 @@ services:
 
 # volumes:
 #   minio_data:
-# volumes:
-#   panopticon_static:
+
 volumes:
   postgres_data:
+  panopticon_static:
 
 
 networks:
