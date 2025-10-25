@@ -25,12 +25,11 @@ class Settings(BaseSettings):
     ML_SERVICE_PORT: int
 
     S3_ENDPOINT_URL: str
-    AWS_ACCESS_KEY_ID: str
-    AWS_SECRET_ACCESS_KEY: str
-    AWS_REGION: str
-    S3_BUCKET: str
+    S3_ACCESS_KEY: str
+    S3_SECRET_KEY: str
+    S3_REGION: str
+    S3_BUCKET_NAME: str
 
-    
 settings = Settings()
 
 ice_servers = [

@@ -3,7 +3,7 @@ from typing import Dict
 from grpc_client.video_processor import VideoProcessor
 
 
-class ProcessorManager:
+class GrpcProcessorManager:
     def __init__(self, max_connections: int=1000):
         self.max_connections = max_connections
         self.processors: Dict[str, VideoProcessor] = {}
