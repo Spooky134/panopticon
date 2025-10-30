@@ -105,7 +105,8 @@
       vstreamServiceURL: "{{ vstream_service_url }}",
       turnURL: "{{ turn_url }}",
       turnUsername: "{{ turn_username }}",
-      turnPassword: "{{ turn_password }}"
+      turnPassword: "{{ turn_password }}",
+      authToken: "{{ auth_token }}"
     };
 
     let localStream, pc, isStreaming = false;
@@ -158,7 +159,10 @@
           const SERVER_URL = CONFIG.vstreamServiceURL;
           const response = await fetch(SERVER_URL, {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${CONFIG.authToken}`
+                },
             body: JSON.stringify({ sdp: offer.sdp, type: offer.type })
           });
 

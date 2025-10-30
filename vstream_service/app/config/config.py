@@ -12,7 +12,6 @@ class Settings(BaseSettings):
     VSTREAM_CORS_ALLOWED_ORIGINS: str
 
     VSTREAM_SERVICE_PORT: int
-    VSTREAM_SERVICE_SECRET_KEY: str
     VSTREAM_SERVICE_ALGORITHM: str
     VSTREAM_SERVICE_ACCESS_TOKEN_EXPIRE_MINUTES: int
 
@@ -29,6 +28,8 @@ class Settings(BaseSettings):
     S3_SECRET_KEY: str
     S3_REGION: str
     S3_BUCKET_NAME: str
+
+    SECRET_KEY: str
 
 settings = Settings()
 

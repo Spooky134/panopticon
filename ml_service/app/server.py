@@ -4,11 +4,13 @@ import grpc
 from concurrent import futures
 import ml_worker_pb2_grpc, ml_worker_pb2
 import asyncio
+from open_pose import OpenPoseProcessor
 
 class MLServiceServicer(ml_worker_pb2_grpc.MLServiceServicer):
     def __init__(self):
         # Можно добавить словарь для хранения состояния сессий если нужно
         self.sessions = {}
+        # self.pose_processor = OpenPoseProcessor("graph_opt.pb")
     
     async def StreamFrames(self, request_iterator, context):
         try:
@@ -26,10 +28,12 @@ class MLServiceServicer(ml_worker_pb2_grpc.MLServiceServicer):
                 
                 # Ваша обработка кадра (пример - серый фильтр)
                 gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-                processed = cv2.cvtColor(gray, cv2.COLOR_GRAY2BGR)
-                
+                processed_frame = cv2.cvtColor(gray, cv2.COLOR_GRAY2BGR)
+                # processed_frame = self.pose_processor.process_frame(frame)
+
+
                 # Кодируем обратно в JPEG
-                _, jpeg_bytes = cv2.imencode(".jpg", processed)
+                _, jpeg_bytes = cv2.imencode(".jpg", processed_frame)
                 
                 # Возвращаем результат
                 yield ml_worker_pb2.FrameResponse(

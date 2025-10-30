@@ -35,6 +35,9 @@ POSTGRES_HOST=env('POSTGRES_HOST')
 POSTGRES_PORT=env('POSTGRES_PORT')
 
 
+SECRET_KEY=env('SECRET_KEY')
+
+
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
@@ -50,7 +53,7 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-*jfgofs9-pp76&w%rh^(=p=$t0p^hvy($%tl2()_hu&g@od*)6'
+# SECRET_KEY = 'django-insecure-*jfgofs9-pp76&w%rh^(=p=$t0p^hvy($%tl2()_hu&g@od*)6'
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True

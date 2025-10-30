@@ -1,9 +1,10 @@
 from aiortc import RTCSessionDescription, RTCConfiguration
 import asyncio
-from fastapi import BackgroundTasks
+from fastapi import BackgroundTasks, Request, HTTPException
 import uuid
 
 from config.config import ice_servers
+from config.config import settings
 
 from grpc_client.grpc_processor_manager import GrpcProcessorManager
 
@@ -12,6 +13,26 @@ from webrtc.video_transform_track import VideoTransformTrack
 
 from utils.frame_collector import FrameCollector
 from storage.s3_storage import S3Storage
+
+import jwt
+
+
+def verify_token(request: Request):
+    auth_header = request.headers.get("Authorization")
+    if not auth_header or not auth_header.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Missing or invalid Authorization header")
+
+    token = auth_header.split(" ")[1]
+    try:
+        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=["HS256"])
+        return payload  # {user_id, session_id, exp}
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=401, detail="Token expired")
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+
+
 
 
 class StreamService:
@@ -23,12 +44,17 @@ class StreamService:
         self.processor_manager = processor_manager
         self.s3_storage = s3_storage
 
-    async def offer(self, sdp_data: dict, background_tasks: BackgroundTasks) -> dict:
+    async def offer(self, sdp_data: dict, background_tasks: BackgroundTasks, request: Request) -> dict:
+        payload = verify_token(request)
+        user_id = payload["user_id"]
+        session_id = payload["session_id"]
+        print(f"[StreamService] Authorized user {user_id} starting stream session {session_id}")
+
         offer = RTCSessionDescription(sdp_data["sdp"], sdp_data["type"])
         rtc_config = RTCConfiguration(iceServers=ice_servers)
 
         # Создаем уникальную сессию для этого подключения
-        session_id = str(uuid.uuid4())
+        # session_id = str(uuid.uuid4())
 
         await self.s3_storage.ensure_bucket()
         collector = FrameCollector(session_id, self.s3_storage)

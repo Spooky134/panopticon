@@ -1,4 +1,4 @@
-from fastapi import APIRouter, BackgroundTasks, Depends
+from fastapi import APIRouter, BackgroundTasks, Depends, Request
 from services.stream_service import StreamService
 from core.dependencies.service_factory import stream_service_factory
 
@@ -6,9 +6,10 @@ router = APIRouter(prefix="/stream", tags=["stream"])
 
 
 @router.post("/offer")
-async def offer(sdp_data: dict,
+async def offer(request: Request,
+                sdp_data: dict,
                 background_tasks: BackgroundTasks,
                 stream_service: StreamService = Depends(stream_service_factory(StreamService))):
-    data  = await stream_service.offer(sdp_data=sdp_data, background_tasks=background_tasks)
+    data  = await stream_service.offer(sdp_data=sdp_data, background_tasks=background_tasks, request=request)
     
     return data
