@@ -35,5 +35,13 @@
         </form>
         <a href="{% url 'account:change_password' %}" class="btn btn-secondary w-100 mt-4">Change password</a>
     </div>
+    <div>
+        #TODO ссылка на тестирование
+        <form method="get" action="{% url 'account:profile_edit' %}">
+            <button class="btn btn-secondary w-100 mt-4">
+                <i class="fas fa-edit me-2"></i>go test
+            </button>
+        </form>
+    </div>
 
 {% endblock%}

@@ -13,16 +13,20 @@ from webrtc.video_transform_track import VideoTransformTrack
 
 from utils.frame_collector import FrameCollector
 from storage.s3_storage import S3Storage
+from schemas.sdp import SDPData
 
 import jwt
 
 
-def verify_token(request: Request):
-    auth_header = request.headers.get("Authorization")
-    if not auth_header or not auth_header.startswith("Bearer "):
-        raise HTTPException(status_code=401, detail="Missing or invalid Authorization header")
+def verify_token(token: str):
+    """
+    Проверяет JWT токен и возвращает payload.
+    Ожидает объект credentials (HTTPAuthorizationCredentials).
+    """  # достаём сам JWT-токен из credentials
 
-    token = auth_header.split(" ")[1]
+    if not token:
+        raise HTTPException(status_code=401, detail="Missing authentication token")
+
     try:
         payload = jwt.decode(token, settings.SECRET_KEY, algorithms=["HS256"])
         return payload  # {user_id, session_id, exp}
@@ -30,8 +34,6 @@ def verify_token(request: Request):
         raise HTTPException(status_code=401, detail="Token expired")
     except jwt.InvalidTokenError:
         raise HTTPException(status_code=401, detail="Invalid token")
-
-
 
 
 
@@ -44,17 +46,14 @@ class StreamService:
         self.processor_manager = processor_manager
         self.s3_storage = s3_storage
 
-    async def offer(self, sdp_data: dict, background_tasks: BackgroundTasks, request: Request) -> dict:
-        payload = verify_token(request)
+    async def offer(self, sdp_data: SDPData, background_tasks: BackgroundTasks, token) -> dict:
+        payload = verify_token(token)
         user_id = payload["user_id"]
         session_id = payload["session_id"]
         print(f"[StreamService] Authorized user {user_id} starting stream session {session_id}")
 
-        offer = RTCSessionDescription(sdp_data["sdp"], sdp_data["type"])
+        offer = RTCSessionDescription(sdp_data.sdp, sdp_data.type)
         rtc_config = RTCConfiguration(iceServers=ice_servers)
-
-        # Создаем уникальную сессию для этого подключения
-        # session_id = str(uuid.uuid4())
 
         await self.s3_storage.ensure_bucket()
         collector = FrameCollector(session_id, self.s3_storage)
@@ -69,6 +68,7 @@ class StreamService:
             if track.kind == "video":
                 transformed_track = VideoTransformTrack(track, grpc_processor, collector)  # Создаем измененный поток
                 peer_connection.addTrack(transformed_track)  # Добавляем его в соединение
+
 
         @peer_connection.on("iceconnectionstatechange")
         async def on_ice_state_change():
