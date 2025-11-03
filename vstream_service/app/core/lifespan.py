@@ -1,6 +1,6 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
-from config.s3_client import get_s3_client, s3_client_instance
+from core.s3_client import get_s3_client, s3_client_instance
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -15,5 +15,5 @@ async def lifespan(app: FastAPI):
     if s3_client_instance:
         await s3_client_instance.close()
         # обнуляем глобальную переменную
-        from config import s3_client
+        from core import s3_client
         s3_client.s3_client_instance = None

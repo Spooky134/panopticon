@@ -6,7 +6,7 @@ import grpc
 
 import ml_worker_pb2
 import ml_worker_pb2_grpc
-from config.config import settings
+from config.settings import settings
 from grpc_client.base_processor import BaseProcessor
 
 

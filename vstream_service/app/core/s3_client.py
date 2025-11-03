@@ -1,5 +1,5 @@
 import aioboto3
-from config.config import settings
+from config.settings import settings
 from typing import AsyncGenerator
 
 s3_client_instance = None  # глобально хранить клиент

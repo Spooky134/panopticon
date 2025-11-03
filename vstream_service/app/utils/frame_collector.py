@@ -4,7 +4,7 @@ import asyncio
 import os
 from datetime import datetime
 
-
+#TODO контекстный менеджер или функция с конеткстом
 class FrameCollector:
     def __init__(self, session_id: str, s3_storage, upload_prefix="videos/"):
         self.session_id = session_id

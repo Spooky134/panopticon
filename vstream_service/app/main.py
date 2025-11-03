@@ -2,9 +2,9 @@ from fastapi import APIRouter, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 
-from routers import stream
-from config.config import settings
-from config.lifespan import lifespan
+from api import routes
+from config.settings import settings
+from core.lifespan import lifespan
 
 
 app = FastAPI(title=settings.VSTREAM_SERVICE_NAME, debug=settings.VSTREAM_DEBUG, lifespan=lifespan)
@@ -18,7 +18,7 @@ app.add_middleware(
 
 api_v1_router = APIRouter(prefix="/v1", tags=["v1"])
 
-api_v1_router.include_router(stream.router, tags=["stream"])
+api_v1_router.include_router(routes.router, tags=["stream"])
 
 app.include_router(api_v1_router, prefix="/api")
 
