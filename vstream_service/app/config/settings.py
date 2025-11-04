@@ -15,19 +15,25 @@ class Settings(BaseSettings):
     VSTREAM_SERVICE_ALGORITHM: str
     VSTREAM_SERVICE_ACCESS_TOKEN_EXPIRE_MINUTES: int
 
-    TURN_PASSWORD: str
-    TURN_USERNAME: str
+    POSTGRES_HOST: str
+    POSTGRES_PORT: int
+    POSTGRES_DB: str
+    POSTGRES_USER: str
+    POSTGRES_PASSWORD: str
+
     TURN_URL: str
     TURN_PORT: str
+    TURN_USERNAME: str
+    TURN_PASSWORD: str
 
     ML_SERVICE_HOST: str
     ML_SERVICE_PORT: int
 
     S3_ENDPOINT_URL: str
+    S3_BUCKET_NAME: str
     S3_ACCESS_KEY: str
     S3_SECRET_KEY: str
     S3_REGION: str
-    S3_BUCKET_NAME: str
 
     SECRET_KEY: str
 

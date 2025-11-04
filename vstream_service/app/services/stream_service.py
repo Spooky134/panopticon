@@ -1,6 +1,6 @@
 import jwt
 
-from schemas.sdp import SDPData
+from api.schemas.sdp import SDPData
 from core.security.token import verify_token
 from utils.session_manager import SessionManager
 
@@ -15,7 +15,7 @@ class StreamService:
         session_id = payload["session_id"]
         print(f"[StreamService] Authorized user {user_id} starting stream session {session_id}")
 
-        answer = await self.session_manager.create_session(
+        answer = await self.session_manager.initiate_session(
             session_id=session_id,
             user_id=user_id,
             sdp_data=sdp_data,

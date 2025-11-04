@@ -1,8 +1,8 @@
 from services.stream_service import StreamService
 from api.dependencies.stream_factory import stream_service_factory
-from fastapi import APIRouter, Depends, BackgroundTasks
+from fastapi import APIRouter, Depends
 from fastapi.security import HTTPAuthorizationCredentials
-from schemas.sdp import SDPData
+from api.schemas.sdp import SDPData
 from core.security.token import get_token
 
 router = APIRouter(prefix="/stream", tags=["stream"])
