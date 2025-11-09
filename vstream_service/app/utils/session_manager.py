@@ -8,7 +8,7 @@ from webrtc.video_transform_track import VideoTransformTrack
 from webrtc.connection_manager import ConnectionManager
 from grpc_client.processor_manager import ProcessorManager
 from storage.s3_storage import S3Storage
-# from db.repositories.session import SessionRepository
+from db.repositories.session import SessionRepository
 
 
 class SessionManager:
@@ -17,13 +17,13 @@ class SessionManager:
                  processor_manager: ProcessorManager,
                  ice_servers,
                  s3_storage: S3Storage,
-                 # session_repository: SessionRepository = None,
+                 session_repository: SessionRepository = None,
                  ):
         self.connection_manager = connection_manager
         self.processor_manager = processor_manager
         self.s3_storage = s3_storage
         self.ice_servers = ice_servers
-        # self.session_repository = session_repository
+        self.session_repository = session_repository
         self.sessions: dict[str, Session] = {}
 
     def _register_event_handlers(self, session: Session):

@@ -1,7 +1,7 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from core.s3_client import get_s3_client, s3_client_instance
-# from core.database import Base, engine
+from core.database import Base, engine
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -10,13 +10,13 @@ async def lifespan(app: FastAPI):
     client_gen = get_s3_client()
     await client_gen.__anext__()  # клиент создастся и сохранится в s3_client_instance
 
-    # async with engine.begin() as conn:
-    #     await conn.run_sync(Base.metadata.create_all)
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
 
     yield  # приложение работает
 
     # --- shutdown: закрываем клиент ---
-    # await engine.dispose()
+    await engine.dispose()
 
     if s3_client_instance:
         await s3_client_instance.close()
