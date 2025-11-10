@@ -9,6 +9,7 @@ from webrtc.connection_manager import ConnectionManager
 from grpc_client.processor_manager import ProcessorManager
 from storage.s3_storage import S3Storage
 from db.repositories.session import SessionRepository
+from datetime import datetime
 
 
 class SessionManager:
@@ -78,6 +79,9 @@ class SessionManager:
         self.sessions[session_id] = session
         print(f"[SessionManager] Created session {session_id} for user {user_id}")
 
+        await self.session_repository.update(session_id=session_id,
+                                             data={"status": "running",
+                                                   "started_at": datetime.now()})
         return answer
 
     async def _dispose_session(self, session_id: str):
@@ -91,6 +95,12 @@ class SessionManager:
             await session.finalize()
         except Exception as e:
             print(f"[SessionManager] Session finalize error: {e}")
+
+        await self.session_repository.update(session_id, {
+            "status": "finished",
+            "ended_at": datetime.now(),
+            "video_url": f"s3://bucket/{session_id}.mp4",
+        })
 
         await asyncio.gather(
             self.processor_manager.close_processor(session_id),

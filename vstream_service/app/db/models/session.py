@@ -16,9 +16,9 @@ class TestingSession(Base):
     ended_at = Column(DateTime(timezone=True))
     status = Column(String(20), default="started", nullable=False, index=True)
     video_url = Column(Text)
-    incidents = Column(JSON)
-    ml_metrics = Column(JSON)
-    meta = Column(JSON)
+    # incidents = Column(JSON)
+    # ml_metrics = Column(JSON)
+    # meta = Column(JSON)
 
     __table_args__ = (
         Index("idx_testing_session_user_id", "user_id"),

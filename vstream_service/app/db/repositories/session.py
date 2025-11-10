@@ -7,24 +7,34 @@ from db.models.session import TestingSession
 
 
 class SessionRepository:
-    def __init__(self, async_session: AsyncSession):
-        self.async_session = async_session
+    def __init__(self, db: AsyncSession):
+        self.db = db
 
-    async def get(self, session_id: int) -> Optional[TestingSession]:
-        result = await self.async_session.execute(
+    async def get(self, session_id: str) -> Optional[TestingSession]:
+        result = await self.db.execute(
             select(TestingSession).
             where(TestingSession.id == session_id))
         return result.scalar_one_or_none()
 
-    async def update(self, session_id: int, data: dict) -> Optional[TestingSession]:
+    async def update(self, session_id: str, data: dict) -> Optional[TestingSession]:
         session = await self.get(session_id=session_id)
+        if not session:
+            print(f"[SessionRepository] Warning: Session {session_id} not found in DB.")
+            return None
 
         for field, value in data.items():
             setattr(session, field, value)
 
-        session.time_update = datetime.now()
-        await self.async_session.commit()
+        # session.ended_at = data.get("ended_at", session.ended_at)
+        # session.started_at = data.get("started_at", session.started_at)
+        # session.status = data.get("status", session.status)
+        # session.meta = data.get("meta", session.meta)
+        # session.ml_metrics = data.get("ml_metrics", session.ml_metrics)
 
+        session.time_update = datetime.now()
+        await self.db.commit()
+
+        print(f"[SessionRepository] Updated testing_session {session_id}")
         return await self.get(session_id=session_id)
 
     # async def create(self, link_data: dict) -> Link:
