@@ -1,12 +1,14 @@
-# video/frame_collector.py
 import av
 import asyncio
 import os
 from datetime import datetime
 
+from storage.s3_storage import S3Storage
+
+
 #TODO контекстный менеджер или функция с конеткстом
 class FrameCollector:
-    def __init__(self, session_id: str, s3_storage, upload_prefix="videos/"):
+    def __init__(self, session_id: str, s3_storage: S3Storage, upload_prefix="videos/"):
         self.session_id = session_id
         self.s3_storage = s3_storage
         self.upload_prefix = upload_prefix

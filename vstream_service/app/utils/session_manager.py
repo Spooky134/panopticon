@@ -81,7 +81,7 @@ class SessionManager:
 
         await self.session_repository.update(session_id=session_id,
                                              data={"status": "running",
-                                                   "started_at": datetime.now()})
+                                                   "started_at": self.sessions.get(session_id).started_at})
         return answer
 
     async def _dispose_session(self, session_id: str):
@@ -98,7 +98,7 @@ class SessionManager:
 
         await self.session_repository.update(session_id, {
             "status": "finished",
-            "ended_at": datetime.now(),
+            "ended_at": self.sessions.get(session_id).finished_at,
             "video_url": f"s3://bucket/{session_id}.mp4",
         })
 
