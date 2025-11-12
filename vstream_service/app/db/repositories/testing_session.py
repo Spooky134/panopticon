@@ -3,10 +3,10 @@ from typing import Optional
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import exists, select, update, delete
 from sqlalchemy.orm import selectinload
-from db.models.session import TestingSession
+from db.models.testing_session import TestingSession
 
 
-class SessionRepository:
+class TestingSessionRepository:
     def __init__(self, db: AsyncSession):
         self.db = db
 

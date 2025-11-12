@@ -19,9 +19,9 @@ class TestingSession(models.Model):
     ended_at = models.DateTimeField(null=True, blank=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="started")
     video_url = models.TextField(null=True, blank=True)           # ссылка на MinIO/S3
-    incidents = models.JSONField(null=True, blank=True)           # список инцидентов от ML
-    ml_metrics = models.JSONField(null=True, blank=True)          # любые метрики/лог
-    meta = models.JSONField(null=True, blank=True)                # свободное поле для доп.данных
+    # incidents = models.JSONField(null=True, blank=True)           # список инцидентов от ML
+    # ml_metrics = models.JSONField(null=True, blank=True)          # любые метрики/лог
+    # meta = models.JSONField(null=True, blank=True)                # свободное поле для доп.данных
 
     class Meta:
         db_table = "testing_session"

@@ -8,8 +8,7 @@ from webrtc.video_transform_track import VideoTransformTrack
 from webrtc.connection_manager import ConnectionManager
 from grpc_client.processor_manager import ProcessorManager
 from storage.s3_storage import S3Storage
-from db.repositories.session import SessionRepository
-from datetime import datetime
+from db.repositories.testing_session import TestingSessionRepository
 
 
 class SessionManager:
@@ -18,13 +17,13 @@ class SessionManager:
                  processor_manager: ProcessorManager,
                  ice_servers,
                  s3_storage: S3Storage,
-                 session_repository: SessionRepository = None,
+                 testing_session_repository: TestingSessionRepository = None,
                  ):
         self.connection_manager = connection_manager
         self.processor_manager = processor_manager
         self.s3_storage = s3_storage
         self.ice_servers = ice_servers
-        self.session_repository = session_repository
+        self.testing_session_repository = testing_session_repository
         self.sessions: dict[str, Session] = {}
 
     def _register_event_handlers(self, session: Session):
@@ -79,9 +78,9 @@ class SessionManager:
         self.sessions[session_id] = session
         print(f"[SessionManager] Created session {session_id} for user {user_id}")
 
-        await self.session_repository.update(session_id=session_id,
-                                             data={"status": "running",
-                                                   "started_at": self.sessions.get(session_id).started_at})
+        testing_session = await self.testing_session_repository.update(session_id=session_id,
+                                                                       data={"status": "running",
+                                                                             "started_at": self.sessions.get(session_id).started_at})
         return answer
 
     async def _dispose_session(self, session_id: str):
@@ -96,7 +95,7 @@ class SessionManager:
         except Exception as e:
             print(f"[SessionManager] Session finalize error: {e}")
 
-        await self.session_repository.update(session_id, {
+        await self.testing_session_repository.update(session_id, {
             "status": "finished",
             "ended_at": self.sessions.get(session_id).finished_at,
             "video_url": f"s3://bucket/{session_id}.mp4",

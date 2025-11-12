@@ -7,6 +7,7 @@ from django.views import View
 from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
+from .models import TestingSession
 import uuid
 
 
@@ -14,13 +15,23 @@ import uuid
 class WebStreamView(View):
     def get(self, request):
         user = request.user
+
+        test_id = str(1)
         # Уникальный session_id для этого теста
-        session_id = str(uuid.uuid4())
+        testing_session_id = str(uuid.uuid4())
+
+        testing_session = TestingSession.objects.create(
+            id=testing_session_id,
+            user_id=user.id,
+            test_id=test_id,
+            status="started",
+            started_at=datetime.datetime.now(),
+        )
 
         payload = {
             "user_id": user.id,
-            "session_id": session_id,
-            "exp": datetime.datetime.utcnow() + datetime.timedelta(minutes=5)
+            "session_id": testing_session_id,
+            "exp": datetime.datetime.now() + datetime.timedelta(minutes=5)
         }
         token = jwt.encode(payload, settings.SECRET_KEY, algorithm="HS256")
 
@@ -32,6 +43,9 @@ class WebStreamView(View):
             'turn_password': settings.TURN_PASSWORD,
         }
         return render(request, 'testing/stream.html', context)
+
+#TODO обработчик нажатия кнопки чтобы создать сессию в бд + в шаблоне тоже добавить обработку
+#TODO переписать под шаблоны django
 
 # class WebStreamView(View):
 #     """View для отображения WebRTC клиента"""
