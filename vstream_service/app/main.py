@@ -5,6 +5,9 @@ import uvicorn
 from api import routes
 from config.settings import settings
 from core.lifespan import lifespan
+from config.logging import setup_logging
+
+setup_logging()
 
 
 app = FastAPI(title=settings.VSTREAM_SERVICE_NAME, debug=settings.VSTREAM_DEBUG, lifespan=lifespan)

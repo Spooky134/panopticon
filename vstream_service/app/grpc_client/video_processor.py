@@ -8,7 +8,10 @@ import ml_worker_pb2
 import ml_worker_pb2_grpc
 from config.settings import settings
 from grpc_client.base_processor import BaseProcessor
+from core.logger import get_logger
 
+
+logger = get_logger(__name__)
 
 class VideoProcessor(BaseProcessor):
     def __init__(self, session_id: str):
@@ -68,8 +71,8 @@ class VideoProcessor(BaseProcessor):
                 await self.response_queue.put(response.processed_image)
 
         except asyncio.CancelledError:
-            print(f"gRPC stream is stopped for {self.session_id}")
+            logger.info(f"session: {self.session_id} - gRPC stream is stopped")
         except Exception as e:
-            print(f"Error in gRPC stream for session {self.session_id}: {e}")
+            logger.error(f"session:{self.session_id} - Error in gRPC stream: {e}")
 
 

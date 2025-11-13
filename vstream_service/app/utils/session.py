@@ -5,6 +5,10 @@ from aiortc import RTCSessionDescription, RTCPeerConnection
 from grpc_client.base_processor import BaseProcessor
 from utils.frame_collector import FrameCollector
 from api.schemas.sdp import SDPData
+from core.logger import get_logger
+
+
+logger = get_logger(__name__)
 
 
 class Session:
@@ -27,7 +31,7 @@ class Session:
         await self.peer_connection.setLocalDescription(answer)
 
         self.started_at = datetime.now()
-        print(f"[Session:{self.session_id}] started for user {self.user_id}")
+        logger.info(f"session: {self.session_id} - Started for user {self.user_id}")
 
         #TODO заменить на схему
         return {
@@ -39,12 +43,12 @@ class Session:
         if self._is_finalized:
             return
 
-        print(f"[Session:{self.session_id}] Finalizing session resources...")
+        logger.info(f"session: {self.session_id} - Finalizing session resources...")
         self._is_finalized = True
 
         try:
             await self.collector.finalize()
         except Exception as e:
-            print(f"[Session:{self.session_id}] Collector finalize error: {e}")
+            logger.error(f"session: {self.session_id} - Collector finalize error: {e}")
 
         self.finished_at = datetime.now()

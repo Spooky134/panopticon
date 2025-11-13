@@ -4,7 +4,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import exists, select, update, delete
 from sqlalchemy.orm import selectinload
 from db.models.testing_session import TestingSession
+from core.logger import get_logger
 
+
+logger = get_logger(__name__)
 
 class TestingSessionRepository:
     def __init__(self, db: AsyncSession):
@@ -19,7 +22,7 @@ class TestingSessionRepository:
     async def update(self, session_id: str, data: dict) -> Optional[TestingSession]:
         session = await self.get(session_id=session_id)
         if not session:
-            print(f"[SessionRepository] Warning: Session {session_id} not found in DB.")
+            logger.warning(f"testing_session: {session_id} -  Not found in DB.")
             return None
 
         for field, value in data.items():
@@ -34,5 +37,5 @@ class TestingSessionRepository:
         session.time_update = datetime.now()
         await self.db.commit()
 
-        print(f"[SessionRepository] Updated testing_session {session_id}")
+        logger.info(f"testing_session: {session_id} - Updated")
         return await self.get(session_id=session_id)

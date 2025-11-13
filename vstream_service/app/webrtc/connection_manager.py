@@ -1,6 +1,10 @@
 from aiortc import RTCPeerConnection, RTCConfiguration
 from typing import Dict
 
+from core.logger import get_logger
+
+
+logger = get_logger(__name__)
 
 class ConnectionManager:
     def __init__(self, max_connections: int=1000):
@@ -22,4 +26,4 @@ class ConnectionManager:
         pc = self.peer_connections.pop(session_id, None)
         if pc:
             await pc.close()
-        print(f"[ConnectionManager] PeerConnection is closed")
+        logger.info(f"peer_connection: {session_id} - Is closed")

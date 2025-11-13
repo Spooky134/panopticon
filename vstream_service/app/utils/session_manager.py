@@ -9,6 +9,10 @@ from webrtc.connection_manager import ConnectionManager
 from grpc_client.processor_manager import ProcessorManager
 from storage.s3_storage import S3Storage
 from db.repositories.testing_session import TestingSessionRepository
+from core.logger import get_logger
+
+
+logger = get_logger(__name__)
 
 
 class SessionManager:
@@ -32,7 +36,7 @@ class SessionManager:
 
         @peer_connection.on("track")
         async def on_track(track):
-            print(f"[Session] Track received: {track.kind} for session {session_id}")
+            logger.info(f"session: {session_id} - Track received: {track.kind}")
             if track.kind == "video":
                 transformed = VideoTransformTrack(track, session.grpc_processor, session.collector)
                 peer_connection.addTrack(transformed)
@@ -40,10 +44,10 @@ class SessionManager:
         @peer_connection.on("iceconnectionstatechange")
         async def on_ice_state_change():
             state = peer_connection.iceConnectionState
-            print(f"[Session {session_id}] ICE state → {state} for session {session_id}")
+            logger.info(f"session: {session_id} - ICE state → {state}")
 
             if state in ["failed", "closed", "disconnected"]:
-                print(f"[Session] ICE inactive — cleaning up {session_id}")
+                logger.info(f"session: {session_id} - ICE state → {state}")
                 await self._dispose_session(session_id)
 
     async def initiate_session(self, user_id:str, session_id: str, sdp_data: SDPData) -> dict:
@@ -76,7 +80,7 @@ class SessionManager:
         answer = await session.start(sdp_data=sdp_data)
 
         self.sessions[session_id] = session
-        print(f"[SessionManager] Created session {session_id} for user {user_id}")
+        logger.info(f"session: {session_id} - Created for user {user_id}")
 
         testing_session = await self.testing_session_repository.update(session_id=session_id,
                                                                        data={"status": "running",
@@ -88,12 +92,12 @@ class SessionManager:
         if not session:
             return
 
-        print(f"[SessionManager] Cleaning up session {session_id}")
+        logger.info(f"session: {session_id} - Cleaning up")
 
         try:
             await session.finalize()
         except Exception as e:
-            print(f"[SessionManager] Session finalize error: {e}")
+            logger.error(f"session: {session_id} - Finalize error: {e}")
 
         await self.testing_session_repository.update(session_id, {
             "status": "finished",
@@ -108,7 +112,7 @@ class SessionManager:
         )
 
         self.sessions.pop(session_id, None)
-        print(f"[SessionManager] Session {session_id} cleaned up")
+        logger.info(f"session: {session_id} - Cleaned up")
 
     async def get_session(self, session_id: str):
         return self.sessions.get(session_id)
