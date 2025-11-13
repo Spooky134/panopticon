@@ -1,5 +1,5 @@
-from services.stream_service import StreamService
-from api.dependencies.stream_service_factory import get_stream_service
+from api.services.stream_service import StreamService
+from api.services.stream_service_factory import get_stream_service
 from fastapi import APIRouter, Depends
 from fastapi.security import HTTPAuthorizationCredentials
 from api.schemas.sdp import SDPData

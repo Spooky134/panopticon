@@ -2,6 +2,7 @@ from django.shortcuts import render
 from django.views import View
 from django.conf import settings
 import jwt, datetime
+from django.utils import timezone
 from django.conf import settings
 from django.views import View
 from django.shortcuts import render
@@ -25,13 +26,13 @@ class WebStreamView(View):
             user_id=user.id,
             test_id=test_id,
             status="started",
-            started_at=datetime.datetime.now(),
+            started_at=timezone.now(),
         )
 
         payload = {
             "user_id": user.id,
             "session_id": testing_session_id,
-            "exp": datetime.datetime.now() + datetime.timedelta(minutes=5)
+            "exp": timezone.now() + datetime.timedelta(minutes=5)
         }
         token = jwt.encode(payload, settings.SECRET_KEY, algorithm="HS256")
 

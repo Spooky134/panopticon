@@ -62,3 +62,63 @@ class FrameCollector:
             print(f"[FrameCollector:{self.session_id}] The video has been successfully uploaded to S3: {object_name}")
         except Exception as e:
             print(f"[FrameCollector:{self.session_id}] Error loading in: {e}")
+
+
+
+# class FrameCollector:
+#     def __init__(self, session_id: str, s3_storage: S3Storage, upload_prefix="videos/"):
+#         self.session_id = session_id
+#         self.s3_storage = s3_storage
+#         self.upload_prefix = upload_prefix
+#         self.frames = []
+#         self.start_time = datetime.now()
+#         self.output_file = f"/tmp/{session_id}.mp4"
+#         self._lock = asyncio.Lock()
+#         self.container = None
+#         self.stream = None
+#
+#     def __enter__(self):
+#         self.container = av.open(self.output_file, mode="w")
+#         self.stream = self.container.add_stream("libx264", rate=30)
+#         self.stream.pix_fmt = "yuv420p"
+#         self.stream.width = self.frames[0].shape[1]
+#         self.stream.height = self.frames[0].shape[0]
+#
+#     def __exit__(self, exc_type, exc_val, exc_tb):
+#         try:
+#             os.remove(self.output_file)
+#         except Exception as e:
+#             print(f"[FrameCollector:{self.session_id}] Error removing file {e}")
+#
+#     def save(self):
+#         print(f"[FrameCollector:{self.session_id}] We are starting finalization of frames={len(self.frames)}")
+#         if not self.frames:
+#             print(f"[FrameCollector:{self.session_id}] There are no frames to save.")
+#             return
+#
+#         print(f"[{self.session_id}] Save {len(self.frames)} frames to {self.output_file}")
+#         try:
+#             for frame_array in self.frames:
+#                 frame = av.VideoFrame.from_ndarray(frame_array, format="bgr24")
+#                 packet = self.stream.encode(frame)
+#                 if packet:
+#                     self.container.mux(packet)
+#
+#             for packet in self.stream.encode(None):
+#                 self.container.mux(packet)
+#             self.container.close()
+#             print(f"[FrameCollector:{self.session_id}] The video is saved locally: {self.output_file}")
+#
+#         except Exception as e:
+#             print(f"[FrameCollector:{self.session_id}] Error while compiling video: {e}")
+#             return
+#         finally:
+#             self.container.close()
+#
+#
+#     async def add_frame(self, frame):
+#         try:
+#             async with self._lock:
+#                 self.frames.append(frame.to_ndarray(format="bgr24"))
+#         except Exception as e:
+#             print(f"[FrameCollector:{self.session_id}] Error adding frame: {e}")

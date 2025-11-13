@@ -1,12 +1,12 @@
 from fastapi import Depends
 
 from storage.s3_storage import S3Storage
-from api.dependencies.storage_factory import get_s3_storage
+from storage.storage_factory import get_s3_storage
 from webrtc.connection_manager import ConnectionManager
 from grpc_client.processor_manager import ProcessorManager
 from config import settings
 from db.repositories.testing_session import TestingSessionRepository
-from api.dependencies.repository_factory import get_testing_session_repository
+from db.repositories.repository_factory import get_testing_session_repository
 from utils.session_manager import SessionManager
 
 
