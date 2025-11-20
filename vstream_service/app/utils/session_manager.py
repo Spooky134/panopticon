@@ -1,4 +1,6 @@
 import asyncio
+import os
+
 from aiortc import RTCConfiguration
 
 from api.schemas.sdp import SDPData
@@ -39,6 +41,11 @@ class SessionManager:
             logger.info(f"session: {session_id} - Track received: {track.kind}")
             if track.kind == "video":
                 transformed = VideoTransformTrack(track, session.grpc_processor, session.collector)
+                # if session.collector:
+                #     try:
+                #         await session.collector.add_frame(transformed)
+                #     except Exception as e:
+                #         logger.error(f"processor: {session.grpc_processor.session_id} - Error adding frame to collector: {e}")
                 peer_connection.addTrack(transformed)
 
         @peer_connection.on("iceconnectionstatechange")
@@ -54,7 +61,7 @@ class SessionManager:
         if session_id in self.sessions:
             await self._dispose_session(session_id)
 
-        await self.s3_storage.ensure_bucket()
+        # await self.s3_storage.ensure_bucket()
 
         peer_connection = await self.connection_manager.create_connection(
             session_id=session_id,
@@ -64,14 +71,14 @@ class SessionManager:
             session_id=session_id
         )
         collector = FrameCollector(
-            session_id=session_id,
-            s3_storage=self.s3_storage)
+            session_id=session_id)
 
         session = Session(
             session_id=session_id,
             user_id=user_id,
             peer_connection=peer_connection,
             video_processor=grpc_processor,
+            collect=True,
             collector=collector
         )
 
@@ -94,10 +101,23 @@ class SessionManager:
 
         logger.info(f"session: {session_id} - Cleaning up")
 
+        upload_prefix = "videos/"
+        object_name = f"{upload_prefix}{session_id}.mp4"
+
+        output_file = session.collector.output_file
+        #TODO удаление видео
         try:
             await session.finalize()
         except Exception as e:
             logger.error(f"session: {session_id} - Finalize error: {e}")
+        try:
+            await self.s3_storage.ensure_bucket()
+            logger.info(f"session: {session_id} - Loading {output_file} → {object_name}")
+            await self.s3_storage.upload_file(output_file, object_name)
+            os.remove(output_file)
+            logger.info(f"session: {session_id} - The video has been successfully uploaded to S3: {object_name}")
+        except Exception as e:
+            logger.error(f"session: {session_id} - Error loading in: {e}")
 
         await self.testing_session_repository.update(session_id, {
             "status": "finished",

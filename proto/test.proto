@@ -1,0 +1,97 @@
+syntax = "proto3";
+
+package vstream_ml_model.ml_worker;
+
+//  Общие структуры
+
+// Метаданные кадра
+message FrameMetadata {
+  uint64 sequence_number = 1;   // Номер кадра в потоке
+  uint64 timestamp_ms = 2;      // Время получения кадра на стороне VStream
+  bool is_calibration = 3;      // Флаг: калибровочный кадр
+  float client_fps = 4;         // FPS, заявленный клиентом
+  float exposure_level = 5;     // Оценка освещённости
+  float blur_score = 6;         // Уровень размытия
+  string camera_position = 7;   // Пример: "frontal", "angled_left"
+  string device_id = 8;         // Идентификатор устройства/браузера
+}
+
+// Калибровочный профиль
+message CalibrationProfile {
+  float avg_brightness = 1;
+  float avg_contrast = 2;
+  float avg_blur = 3;
+
+  float face_box_average_size = 4;     // Средний bbox лица
+  float face_box_variation = 5;
+
+  float camera_angle_pitch = 6;
+  float camera_angle_yaw = 7;
+
+  float estimated_fps = 8;
+  float lighting_stability = 9;
+
+  map<string, float> extra_metrics = 10;
+}
+
+message DetectionBox {
+  string label = 1;
+  float confidence = 2;
+  int32 x = 3;
+  int32 y = 4;
+  int32 w = 5;
+  int32 h = 6;
+}
+
+// Событие/инцидент
+message Incident {
+  string type = 1;            // Например: "multiple_faces", "phone_detected"
+  float confidence = 2;
+  uint64 timestamp_ms = 3;
+  string severity = 4;        // low / medium / high
+  string minio_key = 5;       // ключ к сохранённому артефакту
+}
+
+//  Запросы
+message FrameRequest {
+  string session_id = 1;
+  bytes image = 2;            // JPEG кадр
+  FrameMetadata metadata = 3; // дополнительные параметры
+  string calibration_id = 4;  // идентификатор сессии калибровки
+}
+
+// Пакет калибровочных кадров
+message CalibrationBatch {
+  string session_id = 1;
+  repeated FrameRequest frames = 2;
+}
+
+
+//  Ответы
+message FrameResponse {
+  bytes processed_image = 1;               // Аннотированный кадр (JPEG)
+  repeated DetectionBox detections = 2;    // Обнаруженные объекты
+  repeated Incident incidents = 3;         // Инциденты по кадру
+  string comment = 4;                      // Комментарий ML
+  float ml_latency_ms = 5;                 // время обработки
+}
+
+// Ответ после завершения калибровки
+message CalibrationResponse {
+  CalibrationProfile profile = 1;
+  string session_id = 2;
+  string calibration_id = 3;
+}
+
+
+//  gRPC методы
+service MLService {
+
+  // Основной поток: кадры → ответы по кадрам
+  rpc StreamFrames(stream FrameRequest)
+      returns (stream FrameResponse);
+
+  // Отдельный RPC для калибровки (пакет кадров)
+  rpc SendCalibration(CalibrationBatch)
+      returns (CalibrationResponse);
+}

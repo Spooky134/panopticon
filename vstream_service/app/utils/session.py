@@ -13,7 +13,7 @@ logger = get_logger(__name__)
 
 class Session:
     def __init__(self, session_id:str, user_id:str, peer_connection: RTCPeerConnection,
-                 video_processor: BaseProcessor, collector: FrameCollector):
+                 video_processor: BaseProcessor, collector: FrameCollector=None):
         self.session_id = session_id
         self.user_id = user_id
         self.peer_connection = peer_connection

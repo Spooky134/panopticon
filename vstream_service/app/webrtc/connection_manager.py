@@ -6,6 +6,7 @@ from core.logger import get_logger
 
 logger = get_logger(__name__)
 
+
 class ConnectionManager:
     def __init__(self, max_connections: int=1000):
         self.max_connections = max_connections
