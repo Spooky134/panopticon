@@ -10,13 +10,16 @@ from webrtc.video_transform_track import VideoTransformTrack
 from webrtc.connection_manager import ConnectionManager
 from grpc_client.processor_manager import ProcessorManager
 from storage.s3_storage import S3Storage
-from db.repositories.testing_session import TestingSessionRepository
+from db.repositories import TestingSessionRepository, TestingVideoRepository
 from core.logger import get_logger
 
 
 logger = get_logger(__name__)
 
-
+#TODO добавить сохранение видео в бд
+#TODO сохранение видео в таблицу с сессиями
+#TODO попробовать перенести сохранение в сервис api
+#TODO обьедиенение сервисов сохранения в один????
 class SessionManager:
     def __init__(self,
                  connection_manager: ConnectionManager,
@@ -24,12 +27,14 @@ class SessionManager:
                  ice_servers,
                  s3_storage: S3Storage,
                  testing_session_repository: TestingSessionRepository = None,
+                 testing_video_repository: TestingVideoRepository = None,
                  ):
         self.connection_manager = connection_manager
         self.processor_manager = processor_manager
         self.s3_storage = s3_storage
         self.ice_servers = ice_servers
         self.testing_session_repository = testing_session_repository
+        self.testing_video_repository = testing_video_repository
         self.sessions: dict[str, Session] = {}
 
     def _register_event_handlers(self, session: Session):
@@ -41,11 +46,6 @@ class SessionManager:
             logger.info(f"session: {session_id} - Track received: {track.kind}")
             if track.kind == "video":
                 transformed = VideoTransformTrack(track, session.grpc_processor, session.collector)
-                # if session.collector:
-                #     try:
-                #         await session.collector.add_frame(transformed)
-                #     except Exception as e:
-                #         logger.error(f"processor: {session.grpc_processor.session_id} - Error adding frame to collector: {e}")
                 peer_connection.addTrack(transformed)
 
         @peer_connection.on("iceconnectionstatechange")
@@ -60,8 +60,6 @@ class SessionManager:
     async def initiate_session(self, user_id:str, session_id: str, sdp_data: SDPData) -> dict:
         if session_id in self.sessions:
             await self._dispose_session(session_id)
-
-        # await self.s3_storage.ensure_bucket()
 
         peer_connection = await self.connection_manager.create_connection(
             session_id=session_id,
@@ -78,7 +76,6 @@ class SessionManager:
             user_id=user_id,
             peer_connection=peer_connection,
             video_processor=grpc_processor,
-            collect=True,
             collector=collector
         )
 
@@ -101,15 +98,32 @@ class SessionManager:
 
         logger.info(f"session: {session_id} - Cleaning up")
 
-        upload_prefix = "videos/"
-        object_name = f"{upload_prefix}{session_id}.mp4"
-
-        output_file = session.collector.output_file
-        #TODO удаление видео
         try:
             await session.finalize()
         except Exception as e:
             logger.error(f"session: {session_id} - Finalize error: {e}")
+
+        await self.save_session_result(session_id=session_id)
+
+        await asyncio.gather(
+            self.processor_manager.close_processor(session_id),
+            self.connection_manager.close_connection(session_id),
+            return_exceptions=True,
+        )
+
+        self.sessions.pop(session_id, None)
+        logger.info(f"session: {session_id} - Cleaned up")
+
+    async def save_session_result(self, session_id: str):
+        session = self.sessions.get(session_id)
+        upload_prefix = "videos/"
+        object_name = f"{upload_prefix}{session_id}.mp4"
+
+        # TODO прверка существования collector
+        # TODO проверка существования файла на выходе
+        output_file = session.collector.output_file
+        # TODO удаление видео
+
         try:
             await self.s3_storage.ensure_bucket()
             logger.info(f"session: {session_id} - Loading {output_file} → {object_name}")
@@ -122,17 +136,8 @@ class SessionManager:
         await self.testing_session_repository.update(session_id, {
             "status": "finished",
             "ended_at": self.sessions.get(session_id).finished_at,
-            "video_url": f"s3://bucket/{session_id}.mp4",
+            "video_key": f"video_key",
         })
-
-        await asyncio.gather(
-            self.processor_manager.close_processor(session_id),
-            self.connection_manager.close_connection(session_id),
-            return_exceptions=True,
-        )
-
-        self.sessions.pop(session_id, None)
-        logger.info(f"session: {session_id} - Cleaned up")
 
     async def get_session(self, session_id: str):
         return self.sessions.get(session_id)

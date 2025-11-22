@@ -3,7 +3,7 @@ from typing import Optional
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import exists, select, update, delete
 from sqlalchemy.orm import selectinload
-from db.models.testing_session import TestingSession
+from db.models.testing_sessions import TestingSession
 from core.logger import get_logger
 
 

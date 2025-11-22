@@ -18,13 +18,13 @@ class TestingSession(models.Model):
     started_at = models.DateTimeField(null=True, blank=True)
     ended_at = models.DateTimeField(null=True, blank=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="started")
-    video_url = models.TextField(null=True, blank=True)           # ссылка на MinIO/S3
+    video_key = models.TextField(null=True, blank=True)           # ссылка на MinIO/S3
     # incidents = models.JSONField(null=True, blank=True)           # список инцидентов от ML
     # ml_metrics = models.JSONField(null=True, blank=True)          # любые метрики/лог
     # meta = models.JSONField(null=True, blank=True)                # свободное поле для доп.данных
 
     class Meta:
-        db_table = "testing_session"
+        db_table = "testing_sessions"
         indexes = [
             models.Index(fields=["user_id"]),
             models.Index(fields=["status"]),
@@ -35,11 +35,11 @@ class TestingSession(models.Model):
         self.status = "running"
         self.save(update_fields=["started_at", "status"])
 
-    def mark_finished(self, video_url: str = None, incidents: dict = None, ml_metrics: dict = None):
+    def mark_finished(self, video_key: str = None, incidents: dict = None, ml_metrics: dict = None):
         self.ended_at = timezone.now()
         self.status = "finished"
-        if video_url:
-            self.video_url = video_url
+        if video_key:
+            self.video_key = video_key
         if incidents is not None:
             self.incidents = incidents
         if ml_metrics is not None:

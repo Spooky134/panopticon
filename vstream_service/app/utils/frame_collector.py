@@ -1,6 +1,7 @@
 import av
 import asyncio
 from datetime import datetime
+from utils.base_frame_collector import BaseFrameCollector
 
 from core.logger import get_logger
 
@@ -8,9 +9,9 @@ from core.logger import get_logger
 logger = get_logger(__name__)
 
 
-#TODO контекстный менеджер или функция с конеткстом
-class FrameCollector:
+class FrameCollector(BaseFrameCollector):
     def __init__(self, session_id: str):
+        super().__init__()
         self.session_id = session_id
         self.frames = []
         self.start_time = datetime.now()
@@ -28,7 +29,7 @@ class FrameCollector:
         logger.info(f"session: {self.session_id} - We are starting finalization of frames={len(self.frames)}")
         if not self.frames:
             logger.warning(f"session: {self.session_id} - There are no frames to save.")
-            return
+            return None
 
         logger.info(f"session: {self.session_id} - Save {len(self.frames)} frames to {self.output_file}")
         try:

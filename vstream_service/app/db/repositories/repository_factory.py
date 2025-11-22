@@ -1,9 +1,13 @@
+from typing import Type, TypeVar
 from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.database import get_db
-from db.repositories.testing_session import TestingSessionRepository
 
 
-def get_testing_session_repository(db: AsyncSession = Depends(get_db)) -> TestingSessionRepository:
-    return TestingSessionRepository(db=db)
+T = TypeVar('T')
+
+def repository_factory(repository_class: Type[T]) -> T:
+    def _factory(db: AsyncSession = Depends(get_db)) -> T:
+        return repository_class(db)
+    return _factory

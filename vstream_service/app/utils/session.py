@@ -3,7 +3,7 @@ from datetime import datetime
 from aiortc import RTCSessionDescription, RTCPeerConnection
 
 from grpc_client.base_processor import BaseProcessor
-from utils.frame_collector import FrameCollector
+from utils.base_frame_collector import BaseFrameCollector
 from api.schemas.sdp import SDPData
 from core.logger import get_logger
 
@@ -13,7 +13,7 @@ logger = get_logger(__name__)
 
 class Session:
     def __init__(self, session_id:str, user_id:str, peer_connection: RTCPeerConnection,
-                 video_processor: BaseProcessor, collector: FrameCollector=None):
+                 video_processor: BaseProcessor, collector: BaseFrameCollector=None):
         self.session_id = session_id
         self.user_id = user_id
         self.peer_connection = peer_connection
