@@ -1,4 +1,4 @@
-from sqlalchemy import String, DateTime, Index
+from sqlalchemy import String, DateTime, Index, Integer
 from sqlalchemy.dialects.postgresql import UUID, JSONB
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
@@ -14,13 +14,14 @@ class TestingSession(Base):
     __tablename__ = "testing_sessions"
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    user_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False, index=True)
+    # user_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False, index=True)
+    user_id: Mapped[int] = mapped_column(Integer, nullable=False, index=True)
     test_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
-
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.now, nullable=False)
     started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     ended_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     status: Mapped[str] = mapped_column(String(20), default="started", nullable=False, index=True)
+
     # incidents = Column(JSONB)
     # ml_metrics = Column(JSONB)
     # meta = Column(JSONB)

@@ -12,6 +12,7 @@ from grpc_client.processor_manager import ProcessorManager
 from storage.s3_storage import S3Storage
 from db.repositories import TestingSessionRepository, TestingVideoRepository
 from core.logger import get_logger
+from datetime import datetime
 
 
 logger = get_logger(__name__)
@@ -124,6 +125,7 @@ class SessionManager:
         output_file = session.collector.output_file
         # TODO удаление видео
 
+
         try:
             await self.s3_storage.ensure_bucket()
             logger.info(f"session: {session_id} - Loading {output_file} → {object_name}")
@@ -133,10 +135,21 @@ class SessionManager:
         except Exception as e:
             logger.error(f"session: {session_id} - Error loading in: {e}")
 
+        data = {
+            "testing_session_id": session_id,
+            "s3_key": object_name,
+            "s3_bucket": self.s3_storage.bucket_name,
+            "duration": session.collector.metadata.get("duration"),
+            "file_size": session.collector.metadata.get("file_size"),
+            "mime_type": session.collector.metadata.get("mime_type"),
+            "created_at": datetime.now()
+        }
+
+        await self.testing_video_repository.create(data=data)
+
         await self.testing_session_repository.update(session_id, {
             "status": "finished",
             "ended_at": self.sessions.get(session_id).finished_at,
-            "video_key": f"video_key",
         })
 
     async def get_session(self, session_id: str):

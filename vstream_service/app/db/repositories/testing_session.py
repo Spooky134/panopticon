@@ -2,8 +2,8 @@ from datetime import datetime
 from typing import Optional
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import exists, select, update, delete
-from sqlalchemy.orm import selectinload
-from db.models.testing_sessions import TestingSession
+from sqlalchemy.orm import selectinload, joinedload
+from db.models.testing_session import TestingSession
 from core.logger import get_logger
 
 
@@ -16,6 +16,7 @@ class TestingSessionRepository:
     async def get(self, session_id: str) -> Optional[TestingSession]:
         result = await self.db.execute(
             select(TestingSession).
+            options(joinedload(TestingSession.video)).
             where(TestingSession.id == session_id))
         return result.scalar_one_or_none()
 

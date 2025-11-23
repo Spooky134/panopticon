@@ -17,21 +17,20 @@ class WebStreamView(View):
     def get(self, request):
         user = request.user
 
-        test_id = str(1)
+        test_id = uuid.uuid4()
         # Уникальный session_id для этого теста
-        testing_session_id = str(uuid.uuid4())
+        testing_session_id = uuid.uuid4()
 
         testing_session = TestingSession.objects.create(
             id=testing_session_id,
             user_id=user.id,
             test_id=test_id,
             status="started",
-            started_at=timezone.now(),
         )
 
         payload = {
             "user_id": user.id,
-            "session_id": testing_session_id,
+            "session_id": str(testing_session_id),
             "exp": timezone.now() + datetime.timedelta(minutes=5)
         }
         token = jwt.encode(payload, settings.SECRET_KEY, algorithm="HS256")

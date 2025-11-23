@@ -1,3 +1,5 @@
+import os
+
 import av
 import asyncio
 from datetime import datetime
@@ -17,6 +19,7 @@ class FrameCollector(BaseFrameCollector):
         self.start_time = datetime.now()
         self.output_file = f"/tmp/{session_id}.mp4"
         self._lock = asyncio.Lock()
+        self.metadata = None
 
     async def add_frame(self, frame):
         try:
@@ -49,8 +52,23 @@ class FrameCollector(BaseFrameCollector):
                 container.mux(packet)
 
             container.close()
+
+            await self._calculate_metadata()
+
             logger.info(f"session: {self.session_id} - The video is saved locally: {self.output_file}")
         except Exception as e:
             logger.error(f"session: {self.session_id} - Error while compiling video: {e}")
 
         return self.output_file
+
+    #TODO прокачать метод
+    async def _calculate_metadata(self):
+        file_size = os.path.getsize(self.output_file)
+        duration = len(self.frames) / 30.0
+        mime_type = "video/mp4"
+
+        self.metadata = {
+            "duration": duration,
+            "file_size": file_size,
+            "mime_type": mime_type
+        }
