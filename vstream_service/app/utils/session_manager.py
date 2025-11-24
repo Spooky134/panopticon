@@ -6,13 +6,13 @@ from aiortc import RTCConfiguration
 from api.schemas.sdp import SDPData
 from utils.session import Session
 from utils.frame_collector import FrameCollector
-from webrtc.video_transform_track import VideoTransformTrack
 from webrtc.connection_manager import ConnectionManager
 from grpc_client.processor_manager import ProcessorManager
 from storage.s3_storage import S3Storage
 from db.repositories import TestingSessionRepository, TestingVideoRepository
 from core.logger import get_logger
 from datetime import datetime
+from uuid import UUID
 
 
 logger = get_logger(__name__)
@@ -36,10 +36,10 @@ class SessionManager:
         self.ice_servers = ice_servers
         self.testing_session_repository = testing_session_repository
         self.testing_video_repository = testing_video_repository
-        self.sessions: dict[str, Session] = {}
+        self.sessions: dict[UUID, Session] = {}
 
 
-    async def initiate_session(self, user_id:str, session_id: str, sdp_data: SDPData) -> dict:
+    async def initiate_session(self, user_id:str, session_id: UUID, sdp_data: SDPData) -> dict:
         if session_id in self.sessions:
             await self._dispose_session(session_id)
 
@@ -73,7 +73,7 @@ class SessionManager:
                                                                              "started_at": self.sessions.get(session_id).started_at})
         return answer
 
-    async def _dispose_session(self, session_id: str):
+    async def _dispose_session(self, session_id: UUID):
         session = self.sessions.get(session_id)
         if not session:
             return
@@ -96,7 +96,7 @@ class SessionManager:
         self.sessions.pop(session_id, None)
         logger.info(f"session: {session_id} - Cleaned up")
 
-    async def save_session_result(self, session_id: str):
+    async def save_session_result(self, session_id: UUID):
         session = self.sessions.get(session_id)
         upload_prefix = "videos/"
         object_name = f"{upload_prefix}{session_id}.mp4"
@@ -133,7 +133,7 @@ class SessionManager:
             "ended_at": self.sessions.get(session_id).finished_at,
         })
 
-    async def get_session(self, session_id: str):
+    async def get_session(self, session_id: UUID):
         return self.sessions.get(session_id)
 
     async def dispose_all_sessions(self):

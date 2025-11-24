@@ -1,8 +1,9 @@
 import os
-
 import av
 import asyncio
 from datetime import datetime
+from uuid import UUID
+
 from utils.base_frame_collector import BaseFrameCollector
 
 from core.logger import get_logger
@@ -12,7 +13,7 @@ logger = get_logger(__name__)
 
 
 class FrameCollector(BaseFrameCollector):
-    def __init__(self, session_id: str):
+    def __init__(self, session_id: UUID):
         super().__init__()
         self.session_id = session_id
         self.frames = []

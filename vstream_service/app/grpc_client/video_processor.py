@@ -3,6 +3,7 @@ import cv2
 import numpy as np
 import asyncio
 import grpc
+from uuid import UUID
 
 import ml_worker_pb2
 import ml_worker_pb2_grpc
@@ -14,7 +15,7 @@ from core.logger import get_logger
 logger = get_logger(__name__)
 
 class VideoProcessor(BaseProcessor):
-    def __init__(self, session_id: str):
+    def __init__(self, session_id: UUID):
         super().__init__(session_id)
         self.channel = grpc.aio.insecure_channel(f'{settings.ML_SERVICE_HOST}:{settings.ML_SERVICE_PORT}')
         self.stub = ml_worker_pb2_grpc.MLServiceStub(self.channel)

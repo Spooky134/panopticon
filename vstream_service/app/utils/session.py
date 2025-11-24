@@ -1,6 +1,7 @@
 import asyncio
 from datetime import datetime
 from aiortc import RTCSessionDescription, RTCPeerConnection
+from uuid import UUID
 
 from grpc_client.base_processor import BaseProcessor
 from utils.base_frame_collector import BaseFrameCollector
@@ -13,7 +14,7 @@ logger = get_logger(__name__)
 
 
 class Session:
-    def __init__(self, session_id:str, user_id:str, peer_connection: RTCPeerConnection,
+    def __init__(self, session_id:UUID, user_id:str, peer_connection: RTCPeerConnection,
                  video_processor: BaseProcessor, collector: BaseFrameCollector=None):
         self.session_id = session_id
         self.user_id = user_id
