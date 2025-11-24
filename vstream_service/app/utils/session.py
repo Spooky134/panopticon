@@ -6,6 +6,7 @@ from grpc_client.base_processor import BaseProcessor
 from utils.base_frame_collector import BaseFrameCollector
 from api.schemas.sdp import SDPData
 from core.logger import get_logger
+from webrtc.video_transform_track import VideoTransformTrack
 
 
 logger = get_logger(__name__)
@@ -38,6 +39,24 @@ class Session:
             "sdp": self.peer_connection.localDescription.sdp,
             "type": self.peer_connection.localDescription.type,
         }
+
+    def register_event_handlers(self, on_disconnect):
+        @self.peer_connection.on("track")
+        async def on_track(track):
+            logger.info(f"session: {self.session_id} - Track received: {track.kind}")
+            if track.kind == "video":
+                transformed = VideoTransformTrack(track, self.grpc_processor, self.collector)
+                self.peer_connection.addTrack(transformed)
+
+        @self.peer_connection.on("iceconnectionstatechange")
+        async def on_ice_state_change():
+            state = self.peer_connection.iceConnectionState
+            logger.info(f"session: {self.session_id} - ICE state → {state}")
+
+            if state in ["failed", "closed", "disconnected"]:
+                logger.info(f"session: {self.session_id} - ICE state → {state}")
+                await on_disconnect(self.session_id)
+
 
     async def finalize(self):
         if self._is_finalized:

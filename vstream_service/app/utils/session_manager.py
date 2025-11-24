@@ -38,25 +38,6 @@ class SessionManager:
         self.testing_video_repository = testing_video_repository
         self.sessions: dict[str, Session] = {}
 
-    def _register_event_handlers(self, session: Session):
-        peer_connection = session.peer_connection
-        session_id = session.session_id
-
-        @peer_connection.on("track")
-        async def on_track(track):
-            logger.info(f"session: {session_id} - Track received: {track.kind}")
-            if track.kind == "video":
-                transformed = VideoTransformTrack(track, session.grpc_processor, session.collector)
-                peer_connection.addTrack(transformed)
-
-        @peer_connection.on("iceconnectionstatechange")
-        async def on_ice_state_change():
-            state = peer_connection.iceConnectionState
-            logger.info(f"session: {session_id} - ICE state → {state}")
-
-            if state in ["failed", "closed", "disconnected"]:
-                logger.info(f"session: {session_id} - ICE state → {state}")
-                await self._dispose_session(session_id)
 
     async def initiate_session(self, user_id:str, session_id: str, sdp_data: SDPData) -> dict:
         if session_id in self.sessions:
@@ -80,11 +61,11 @@ class SessionManager:
             collector=collector
         )
 
-        self._register_event_handlers(session)
-
+        session.register_event_handlers(on_disconnect=self._dispose_session)
         answer = await session.start(sdp_data=sdp_data)
 
         self.sessions[session_id] = session
+
         logger.info(f"session: {session_id} - Created for user {user_id}")
 
         testing_session = await self.testing_session_repository.update(session_id=session_id,
