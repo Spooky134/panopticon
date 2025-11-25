@@ -18,3 +18,6 @@ class BaseFrameCollector:
 
     async def finalize(self):
         raise NotImplementedError
+
+    async def get_metadata(self):
+        raise NotImplementedError

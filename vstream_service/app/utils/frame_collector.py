@@ -4,6 +4,8 @@ import asyncio
 from datetime import datetime
 from uuid import UUID
 
+from sqlalchemy.testing.suite.test_reflection import metadata
+
 from utils.base_frame_collector import BaseFrameCollector
 
 from core.logger import get_logger
@@ -54,8 +56,6 @@ class FrameCollector(BaseFrameCollector):
 
             container.close()
 
-            await self._calculate_metadata()
-
             logger.info(f"session: {self.session_id} - The video is saved locally: {self.output_file}")
         except Exception as e:
             logger.error(f"session: {self.session_id} - Error while compiling video: {e}")
@@ -63,13 +63,16 @@ class FrameCollector(BaseFrameCollector):
         return self.output_file
 
     #TODO прокачать метод
-    async def _calculate_metadata(self):
+    async def get_metadata(self):
         file_size = os.path.getsize(self.output_file)
         duration = len(self.frames) / 30.0
         mime_type = "video/mp4"
 
-        self.metadata = {
-            "duration": duration,
-            "file_size": file_size,
-            "mime_type": mime_type
-        }
+        if not metadata:
+            self.metadata = {
+                "duration": duration,
+                "file_size": file_size,
+                "mime_type": mime_type
+            }
+
+        return self.metadata

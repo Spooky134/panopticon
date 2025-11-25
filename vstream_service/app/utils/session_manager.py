@@ -17,8 +17,7 @@ from uuid import UUID
 
 logger = get_logger(__name__)
 
-#TODO добавить сохранение видео в бд
-#TODO сохранение видео в таблицу с сессиями
+
 #TODO попробовать перенести сохранение в сервис api
 #TODO обьедиенение сервисов сохранения в один????
 class SessionManager:
@@ -98,31 +97,33 @@ class SessionManager:
 
     async def save_session_result(self, session_id: UUID):
         session = self.sessions.get(session_id)
-        upload_prefix = "videos/"
-        object_name = f"{upload_prefix}{session_id}.mp4"
 
-        # TODO прверка существования collector
-        # TODO проверка существования файла на выходе
-        output_file = session.collector.output_file
-        # TODO удаление видео
+        meta = None
+        s3_key = None
 
+        if session.collector:
+            if session.collector.output_file:
+                local_file = session.collector.output_file
+                meta = await session.collector.get_metadata()
 
-        try:
-            await self.s3_storage.ensure_bucket()
-            logger.info(f"session: {session_id} - Loading {output_file} → {object_name}")
-            await self.s3_storage.upload_file(output_file, object_name)
-            os.remove(output_file)
-            logger.info(f"session: {session_id} - The video has been successfully uploaded to S3: {object_name}")
-        except Exception as e:
-            logger.error(f"session: {session_id} - Error loading in: {e}")
+                object_name = f"{session_id}.mp4"
+                try:
+                    logger.info(f"session: {session_id} - Loading {local_file} → {object_name}")
+                    s3_key = await self.s3_storage.upload_file(file_path=local_file, object_name=object_name)
+                    # TODO удаление видео
+                    os.remove(local_file)
+                    logger.info(f"session: {session_id} - The video has been successfully uploaded to S3: {object_name}")
+                except Exception as e:
+                    logger.error(f"session: {session_id} - Error loading in: {e}")
+
 
         data = {
             "testing_session_id": session_id,
-            "s3_key": object_name,
+            "s3_key": s3_key,
             "s3_bucket": self.s3_storage.bucket_name,
-            "duration": session.collector.metadata.get("duration"),
-            "file_size": session.collector.metadata.get("file_size"),
-            "mime_type": session.collector.metadata.get("mime_type"),
+            "duration": meta.get("duration"),
+            "file_size": meta.get("file_size"),
+            "mime_type": meta.get("mime_type"),
             "created_at": datetime.now()
         }
 

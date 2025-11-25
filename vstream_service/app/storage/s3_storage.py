@@ -7,9 +7,10 @@ logger = get_logger(__name__)
 
 
 class S3Storage:
-    def __init__(self, s3_client, bucket_name: str):
+    def __init__(self, s3_client, bucket_name: str, prefix="videos/"):
         self.client = s3_client
         self.bucket_name = bucket_name
+        self.prefix = prefix
 
     async def ensure_bucket(self):
         try:
@@ -20,14 +21,14 @@ class S3Storage:
             await self.client.create_bucket(Bucket=self.bucket_name)
 
     async def upload_file(self, file_path: str, object_name: str) -> str:
-        logger.info(f"Loading {file_path} → {self.bucket_name}/{object_name}")
+        logger.info(f"Loading {file_path} → {self.bucket_name}/{self.prefix}/{object_name}")
         try:
             await self.client.upload_file(file_path, self.bucket_name, object_name)
             logger.info(f"Successfully uploaded {object_name}")
         except Exception as e:
             logger.error(f"Error uploading file {file_path}: {e}")
 
-        return object_name
+        return f"{self.prefix}/{object_name}"
 
     async def upload_bytes(self, data: bytes, object_name: str, content_type="video/mp4"):
         logger.info(f"Loading an object {object_name} ({len(data)} byte)")
