@@ -15,8 +15,6 @@ from uuid import UUID
 logger = get_logger(__name__)
 
 
-#TODO попробовать перенести сохранение в сервис api
-#TODO обьедиенение сервисов сохранения в один????
 class SessionManager:
     def __init__(self,
                  connection_manager: ConnectionManager,
@@ -28,10 +26,13 @@ class SessionManager:
         self.ice_servers = ice_servers
         self.sessions: dict[UUID, Session] = {}
         self.on_session_finished = None
+        self.on_session_started = None
 
 
     async def initiate_session(self, user_id:str, session_id: UUID, sdp_data: SDPData, on_session_started=None, on_session_finished=None) -> dict:
         self.on_session_finished = on_session_finished
+        self.on_session_started = on_session_started
+
         if session_id in self.sessions:
             await self._dispose_session(session_id)
 
@@ -89,7 +90,6 @@ class SessionManager:
 
         self.sessions.pop(session_id, None)
         logger.info(f"session: {session_id} - Cleaned up")
-
 
     async def get_session(self, session_id: UUID) -> Session:
         return self.sessions.get(session_id)

@@ -25,6 +25,7 @@ class Session:
         self.finished_at = None
         self._is_finalized = False
 
+
     async def start(self, sdp_data: SDPData) -> dict:
         offer = RTCSessionDescription(sdp_data.sdp, sdp_data.type)
         await self.peer_connection.setRemoteDescription(offer)

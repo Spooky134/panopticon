@@ -35,20 +35,40 @@ class StreamService:
             session_id=session_id,
             user_id=user_id,
             sdp_data=sdp_data,
-            on_session_started=self._update_to_started,
-            on_session_finished=self._save_session_result,
+            on_session_started=self._started_update,
+            on_session_finished=self._finished_update,
         )
-
 
         return answer
 
-    async def _update_to_started(self, session: Session):
+    async def _started_update(self, session: Session):
         testing_session = await self.testing_session_repository.update(session_id=session.session_id,
                                                                        data={"status": "running",
                                                                              "started_at": session.started_at})
 
-    async def _save_session_result(self, session: Session):
+    async def _finished_update(self, session: Session):
         logger.info(f"StreamService: Saving session: id - {session.session_id} :)))))")
+
+        s3_key, meta = self._save_data_to_s3(session)
+
+        data = {
+            "testing_session_id": session.session_id,
+            "s3_key": s3_key,
+            "s3_bucket": self.s3_storage.bucket_name,
+            "duration": meta.get("duration"),
+            "file_size": meta.get("file_size"),
+            "mime_type": meta.get("mime_type"),
+            "created_at": datetime.now()
+        }
+
+        await self.testing_video_repository.create(data=data)
+
+        await self.testing_session_repository.update(session.session_id, {
+            "status": "finished",
+            "ended_at": session.finished_at,
+        })
+
+    async def _save_data_to_s3(self, session: Session):
         meta = None
         s3_key = None
 
@@ -68,19 +88,4 @@ class StreamService:
                     logger.error(f"session: {session.session_id} - Error loading in: {e}")
 
 
-        data = {
-            "testing_session_id": session.session_id,
-            "s3_key": s3_key,
-            "s3_bucket": self.s3_storage.bucket_name,
-            "duration": meta.get("duration"),
-            "file_size": meta.get("file_size"),
-            "mime_type": meta.get("mime_type"),
-            "created_at": datetime.now()
-        }
-
-        await self.testing_video_repository.create(data=data)
-
-        await self.testing_session_repository.update(session.session_id, {
-            "status": "finished",
-            "ended_at": session.finished_at,
-        })
+        return s3_key, meta
