@@ -12,7 +12,7 @@ from utils.session import Session
 
 logger = get_logger(__name__)
 
-# TODO добавить в таблицу с сессиями продолжительность сессии
+
 class StreamService:
     def __init__(self,
                  session_manager: SessionManager,
@@ -49,7 +49,7 @@ class StreamService:
     async def _finished_update(self, session: Session):
         logger.info(f"StreamService: Saving session: id - {session.session_id} :)))))")
 
-        s3_key, meta = self._save_data_to_s3(session)
+        s3_key, meta = await self._save_data_to_s3(session)
 
         data = {
             "testing_session_id": session.session_id,
@@ -80,7 +80,7 @@ class StreamService:
                 object_name = f"{session.session_id}.mp4"
                 try:
                     logger.info(f"session: {session.session_id} - Loading {local_file} → {object_name}")
-                    s3_key = await self.s3_storage.upload_file(file_path=local_file, object_name=object_name)
+                    s3_key = await self.s3_storage.upload_multipart(file_path=local_file, object_name=object_name)
                     # TODO удаление видео
                     os.remove(local_file)
                     logger.info(f"session: {session.session_id} - The video has been successfully uploaded to S3: {object_name}")
