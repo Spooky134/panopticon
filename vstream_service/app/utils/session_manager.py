@@ -1,5 +1,4 @@
 import asyncio
-import os
 
 from aiortc import RTCConfiguration
 
@@ -8,8 +7,6 @@ from utils.session import Session
 from utils.frame_collector import FrameCollector
 from webrtc.connection_manager import ConnectionManager
 from grpc_client.processor_manager import ProcessorManager
-from storage.s3_storage import S3Storage
-from db.repositories import TestingSessionRepository, TestingVideoRepository
 from core.logger import get_logger
 from datetime import datetime
 from uuid import UUID
@@ -25,20 +22,16 @@ class SessionManager:
                  connection_manager: ConnectionManager,
                  processor_manager: ProcessorManager,
                  ice_servers,
-                 s3_storage: S3Storage,
-                 testing_session_repository: TestingSessionRepository = None,
-                 testing_video_repository: TestingVideoRepository = None,
                  ):
         self.connection_manager = connection_manager
         self.processor_manager = processor_manager
-        self.s3_storage = s3_storage
         self.ice_servers = ice_servers
-        self.testing_session_repository = testing_session_repository
-        self.testing_video_repository = testing_video_repository
         self.sessions: dict[UUID, Session] = {}
+        self.on_session_finished = None
 
 
-    async def initiate_session(self, user_id:str, session_id: UUID, sdp_data: SDPData) -> dict:
+    async def initiate_session(self, user_id:str, session_id: UUID, sdp_data: SDPData, on_session_started=None, on_session_finished=None) -> dict:
+        self.on_session_finished = on_session_finished
         if session_id in self.sessions:
             await self._dispose_session(session_id)
 
@@ -67,9 +60,9 @@ class SessionManager:
 
         logger.info(f"session: {session_id} - Created for user {user_id}")
 
-        testing_session = await self.testing_session_repository.update(session_id=session_id,
-                                                                       data={"status": "running",
-                                                                             "started_at": self.sessions.get(session_id).started_at})
+        await on_session_started(session=session)
+
+
         return answer
 
     async def _dispose_session(self, session_id: UUID):
@@ -84,7 +77,9 @@ class SessionManager:
         except Exception as e:
             logger.error(f"session: {session_id} - Finalize error: {e}")
 
-        await self.save_session_result(session_id=session_id)
+
+        await self.on_session_finished(session=session)
+        # await self.save_session_result(session_id=session_id)
 
         await asyncio.gather(
             self.processor_manager.close_processor(session_id),
@@ -95,46 +90,8 @@ class SessionManager:
         self.sessions.pop(session_id, None)
         logger.info(f"session: {session_id} - Cleaned up")
 
-    async def save_session_result(self, session_id: UUID):
-        session = self.sessions.get(session_id)
 
-        meta = None
-        s3_key = None
-
-        if session.collector:
-            if session.collector.output_file:
-                local_file = session.collector.output_file
-                meta = await session.collector.get_metadata()
-
-                object_name = f"{session_id}.mp4"
-                try:
-                    logger.info(f"session: {session_id} - Loading {local_file} → {object_name}")
-                    s3_key = await self.s3_storage.upload_file(file_path=local_file, object_name=object_name)
-                    # TODO удаление видео
-                    os.remove(local_file)
-                    logger.info(f"session: {session_id} - The video has been successfully uploaded to S3: {object_name}")
-                except Exception as e:
-                    logger.error(f"session: {session_id} - Error loading in: {e}")
-
-
-        data = {
-            "testing_session_id": session_id,
-            "s3_key": s3_key,
-            "s3_bucket": self.s3_storage.bucket_name,
-            "duration": meta.get("duration"),
-            "file_size": meta.get("file_size"),
-            "mime_type": meta.get("mime_type"),
-            "created_at": datetime.now()
-        }
-
-        await self.testing_video_repository.create(data=data)
-
-        await self.testing_session_repository.update(session_id, {
-            "status": "finished",
-            "ended_at": self.sessions.get(session_id).finished_at,
-        })
-
-    async def get_session(self, session_id: UUID):
+    async def get_session(self, session_id: UUID) -> Session:
         return self.sessions.get(session_id)
 
     async def dispose_all_sessions(self):

@@ -28,7 +28,7 @@ class S3Storage:
         except Exception as e:
             logger.error(f"Error uploading file {file_path}: {e}")
 
-        return f"{self.prefix}/{object_name}"
+        return f"{self.prefix}{object_name}"
 
     async def upload_bytes(self, data: bytes, object_name: str, content_type="video/mp4"):
         logger.info(f"Loading an object {object_name} ({len(data)} byte)")
