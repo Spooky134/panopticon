@@ -1,3 +1,4 @@
+import requests
 from django.shortcuts import render
 from django.views import View
 from django.conf import settings
@@ -12,32 +13,20 @@ from .models import TestingSession
 import uuid
 
 
+#TODO можно задудосить стрим сервис если много запросов
 @method_decorator(login_required, name='dispatch')
 class WebStreamView(View):
     def get(self, request):
         user = request.user
-
-        test_id = uuid.uuid4()
-        # Уникальный session_id для этого теста
-        testing_session_id = uuid.uuid4()
-
-        testing_session = TestingSession.objects.create(
-            id=testing_session_id,
-            user_id=user.id,
-            test_id=test_id,
-            status="started",
-        )
-
-        payload = {
-            "user_id": user.id,
-            "session_id": str(testing_session_id),
-            "exp": timezone.now() + datetime.timedelta(minutes=5)
-        }
-        token = jwt.encode(payload, settings.SECRET_KEY, algorithm="HS256")
+        response = requests.post(f"{settings.VSTREAM_INTERNAL_URL}sessions/",
+                                 json={"user_id": user.id},
+                                 headers={"X-Api-Key": settings.SECRET_KEY})
+                                 # timeout=3)
+        data = response.json()
 
         context = {
-            'vstream_service_url': f'http://{settings.VSTREAM_SERVICE_HOST}/video-testing/test/stream/',
-            'auth_token': token,
+            'vstream_service_url': settings.VSTREAM_WEBRTC_URL,
+            'auth_token': data.get("token"),
             'turn_url': settings.TURN_URL,
             'turn_username': settings.TURN_USERNAME,
             'turn_password': settings.TURN_PASSWORD,

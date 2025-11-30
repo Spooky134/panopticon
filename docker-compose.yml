@@ -24,11 +24,10 @@ services:
     env_file: .env
     environment:
       - PANOPTICON_NAME=${PANOPTICON_NAME}
+      - VSTREAM_INTERNAL_URL=${VSTREAM_INTERNAL_URL}
+      - VSTREAM_WEBRTC_URL=${VSTREAM_WEBRTC_URL}
       
-      - VSTREAM_SERVICE_URL=${VSTREAM_SERVICE_HOST}:${VSTREAM_SERVICE_PORT}
-      - VSTREAM_SERVICE_HOST=${VSTREAM_SERVICE_HOST}
-      
-      - TURN_URL=turn:${EXTERNAL_IP}:${TURN_PORT}
+      - TURN_URL=${TURN_URL}
       - TURN_USERNAME=${TURN_USERNAME}
       - TURN_PASSWORD=${TURN_PASSWORD}
 
@@ -65,10 +64,9 @@ services:
       - VSTREAM_CORS_ALLOWED_ORIGINS=${VSTREAM_CORS_ALLOWED_ORIGINS}
       - VSTREAM_DEBUG=${VSTREAM_DEBUG}
 
-      - ML_SERVICE_HOST=${ML_SERVICE_HOST}
-      - ML_SERVICE_PORT=${ML_SERVICE_PORT}
+      - ML_SERVICE_URL=${ML_SERVICE_URL}
 
-      - TURN_URL=turn:${EXTERNAL_IP}:${TURN_PORT}
+      - TURN_URL=${TURN_URL}
       - TURN_USERNAME=${TURN_USERNAME}
       - TURN_PASSWORD=${TURN_PASSWORD}
 
@@ -78,7 +76,7 @@ services:
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
 
-      - S3_ENDPOINT_URL=http://${S3_HOST}:${S3_PORT}
+      - S3_URL=${S3_URL}
       - S3_ACCESS_KEY=${S3_ACCESS_KEY}
       - S3_SECRET_KEY=${S3_SECRET_KEY}
       - S3_BUCKET_NAME=${S3_BUCKET_NAME}
@@ -92,7 +90,6 @@ services:
     command: uvicorn main:app --host 0.0.0.0 --port ${VSTREAM_SERVICE_PORT}
     networks:
       - mainnet
-
   ml_service:
     build:
       context: .
@@ -107,7 +104,6 @@ services:
     command: python server.py
     networks:
       - mainnet
-
   coturn:
     image: instrumentisto/coturn
     container_name: coturn
@@ -126,7 +122,6 @@ services:
       --log-file=stdout
     networks:
       - mainnet
-
   database:
     image: postgres:13
     container_name: database
@@ -142,7 +137,6 @@ services:
       - ${POSTGRES_PORT}
     networks:
       - mainnet
-  
   storage:
     image: minio/minio
     container_name: storage
@@ -164,7 +158,6 @@ volumes:
   storage:
   postgres_data:
   panopticon_static:
-
 
 networks:
   mainnet:

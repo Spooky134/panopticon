@@ -1,6 +1,6 @@
 from fastapi import Depends
 
-from api.services.stream_service import StreamService
+from api.services.stream import StreamService
 from utils.session_manger_factory import get_session_manager
 from storage.s3_storage import S3Storage
 from storage.storage_factory import get_s3_storage

@@ -2,7 +2,8 @@ from fastapi import APIRouter, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 
-from api import routes
+from api.routes import session
+from api.routes import stream
 from config.settings import settings
 from core.lifespan import lifespan
 from config.logging import setup_logging
@@ -21,7 +22,8 @@ app.add_middleware(
 
 api_v1_router = APIRouter(prefix="/v1", tags=["v1"])
 
-api_v1_router.include_router(routes.router, tags=["stream"])
+api_v1_router.include_router(session.router, tags=["sessions"])
+api_v1_router.include_router(stream.router, tags=["stream"])
 
 app.include_router(api_v1_router, prefix="/api")
 

@@ -20,8 +20,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Пытаемся прочитать .env, но если его нет - ок
 env.read_env(BASE_DIR / '.env')
 
-VSTREAM_SERVICE_URL = env("VSTREAM_SERVICE_URL")  # хост и порт вашего FastAPI сервиса
-VSTREAM_SERVICE_HOST = env("VSTREAM_SERVICE_HOST")  # хост и порт вашего FastAPI сервиса
+VSTREAM_INTERNAL_URL = env("VSTREAM_INTERNAL_URL")
+VSTREAM_WEBRTC_URL = env("VSTREAM_WEBRTC_URL")
+
 
 # TURN server configuration (опционально)
 TURN_URL = env('TURN_URL')

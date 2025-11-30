@@ -1,6 +1,7 @@
 import os
 from datetime import datetime
 
+from api.schemas.session import SessionCreate
 from core.security.token import verify_token
 from utils.session_manager import SessionManager
 from api.schemas.sdp import SDPData
@@ -29,6 +30,7 @@ class StreamService:
         payload = verify_token(token)
         user_id = payload["user_id"]
         session_id = payload["session_id"]
+
         logger.info(f"session: {session_id} - Authorized user {user_id} starting stream")
 
         answer = await self.session_manager.initiate_session(
@@ -40,6 +42,9 @@ class StreamService:
         )
 
         return answer
+
+    async def create_session(self, session_create: SessionCreate):
+        pass
 
     async def _started_update(self, session: Session):
         testing_session = await self.testing_session_repository.update(session_id=session.session_id,

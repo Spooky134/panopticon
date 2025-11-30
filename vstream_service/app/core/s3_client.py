@@ -11,8 +11,8 @@ async def get_s3_client() -> AsyncGenerator:
         session_args = {"region_name": settings.S3_REGION}
         client_args = {"service_name": "s3"}
 
-        if settings.S3_ENDPOINT_URL:
-            client_args["endpoint_url"] = settings.S3_ENDPOINT_URL
+        if settings.S3_URL:
+            client_args["endpoint_url"] = settings.S3_URL
             client_args["aws_access_key_id"] = settings.S3_ACCESS_KEY or "minioadmin"
             client_args["aws_secret_access_key"] = settings.S3_SECRET_KEY or "minioadmin"
             client_args["use_ssl"] = False

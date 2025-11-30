@@ -27,10 +27,9 @@ class Settings(BaseSettings):
     TURN_USERNAME: str
     TURN_PASSWORD: str
 
-    ML_SERVICE_HOST: str
-    ML_SERVICE_PORT: int
+    ML_SERVICE_URL: str
 
-    S3_ENDPOINT_URL: str
+    S3_URL: str
     S3_BUCKET_NAME: str
     S3_ACCESS_KEY: str
     S3_SECRET_KEY: str

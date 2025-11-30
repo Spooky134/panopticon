@@ -17,7 +17,7 @@ logger = get_logger(__name__)
 class VideoProcessor(BaseProcessor):
     def __init__(self, session_id: UUID):
         super().__init__(session_id)
-        self.channel = grpc.aio.insecure_channel(f'{settings.ML_SERVICE_HOST}:{settings.ML_SERVICE_PORT}')
+        self.channel = grpc.aio.insecure_channel(settings.ML_SERVICE_URL)
         self.stub = ml_worker_pb2_grpc.MLServiceStub(self.channel)
         self.request_queue = asyncio.Queue(100)
         self.response_queue = asyncio.Queue(100)
