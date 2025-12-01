@@ -1,10 +1,10 @@
 from .repository_factory import repository_factory
-from .testing_video import TestingVideoRepository
-from .testing_session import TestingSessionRepository
+from .streaming_video import StreamingVideoRepository
+from .streaming_session import StreamingSessionRepository
 
 
 __all__ = [
     "repository_factory",
-    "TestingVideoRepository",
-    "TestingSessionRepository",
+    "StreamingVideoRepository",
+    "StreamingSessionRepository",
 ]

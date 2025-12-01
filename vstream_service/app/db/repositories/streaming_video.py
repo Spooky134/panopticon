@@ -10,21 +10,21 @@ import uuid
 
 logger = get_logger(__name__)
 
-class TestingVideoRepository:
+class StreamingVideoRepository:
     def __init__(self, db: AsyncSession):
         self.db = db
 
-    async def get(self, testing_video_id) -> Optional[TestingVideo]:
-        result = await self.db.execute(
+    async def get(self, streaming_video_id: uuid.UUID) -> Optional[TestingVideo]:
+        streaming_video = await self.db.execute(
             select(TestingVideo).
             options(joinedload(TestingVideo.testing_session)).
-            where(TestingVideo.id == testing_video_id))
-        return result.scalar_one_or_none()
+            where(TestingVideo.id == streaming_video_id))
+        return streaming_video.scalar_one_or_none()
 
     async def create(self, data: dict) -> TestingVideo:
-        new_video = TestingVideo(**data)
-        self.db.add(new_video)
+        new_streaming_video = TestingVideo(**data)
+        self.db.add(new_streaming_video)
         await self.db.commit()
-        # await self.db.refresh(new_video)
+        # await self.db.refresh(new_streaming_video)
 
-        return await self.get(new_video.id)
+        return await self.get(new_streaming_video.id)

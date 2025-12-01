@@ -69,7 +69,7 @@ class TestingVideo(models.Model):
     class Meta:
         db_table = "testing_videos"
         #TODO поменять флаг когда будет alembic
-        managed = False
+        # managed = False
         indexes = [
             models.Index(fields=["s3_key"]),
             models.Index(fields=["testing_session_id"]),

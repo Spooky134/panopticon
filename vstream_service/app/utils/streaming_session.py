@@ -13,10 +13,10 @@ from webrtc.video_transform_track import VideoTransformTrack
 logger = get_logger(__name__)
 
 
-class Session:
-    def __init__(self, session_id:UUID, user_id:str, peer_connection: RTCPeerConnection,
+class StreamingSession:
+    def __init__(self, session_id: UUID, user_id: int, peer_connection: RTCPeerConnection,
                  video_processor: BaseProcessor, collector: BaseFrameCollector=None):
-        self.session_id = session_id
+        self.id = session_id
         self.user_id = user_id
         self.peer_connection = peer_connection
         self.grpc_processor = video_processor
@@ -34,7 +34,7 @@ class Session:
         await self.peer_connection.setLocalDescription(answer)
 
         self.started_at = datetime.now()
-        logger.info(f"session: {self.session_id} - Started for user {self.user_id}")
+        logger.info(f"session: {self.id} - Started for user {self.user_id}")
 
         #TODO заменить на схему
         return {
@@ -45,7 +45,7 @@ class Session:
     def register_event_handlers(self, on_disconnect):
         @self.peer_connection.on("track")
         async def on_track(track):
-            logger.info(f"session: {self.session_id} - Track received: {track.kind}")
+            logger.info(f"session: {self.id} - Track received: {track.kind}")
             if track.kind == "video":
                 transformed = VideoTransformTrack(track, self.grpc_processor, self.collector)
                 self.peer_connection.addTrack(transformed)
@@ -53,23 +53,23 @@ class Session:
         @self.peer_connection.on("iceconnectionstatechange")
         async def on_ice_state_change():
             state = self.peer_connection.iceConnectionState
-            logger.info(f"session: {self.session_id} - ICE state → {state}")
+            logger.info(f"session: {self.id} - ICE state → {state}")
 
             if state in ["failed", "closed", "disconnected"]:
-                logger.info(f"session: {self.session_id} - ICE state → {state}")
-                await on_disconnect(self.session_id)
+                logger.info(f"session: {self.id} - ICE state → {state}")
+                await on_disconnect(self.id)
 
 
     async def finalize(self):
         if self._is_finalized:
             return
 
-        logger.info(f"session: {self.session_id} - Finalizing session resources...")
+        logger.info(f"session: {self.id} - Finalizing session resources...")
         self._is_finalized = True
 
         try:
             await self.collector.finalize()
         except Exception as e:
-            logger.error(f"session: {self.session_id} - Collector finalize error: {e}")
+            logger.error(f"session: {self.id} - Collector finalize error: {e}")
 
         self.finished_at = datetime.now()

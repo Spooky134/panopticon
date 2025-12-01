@@ -1,20 +1,20 @@
 from fastapi import Depends
 
 from api.services.stream import StreamService
-from utils.session_manger_factory import get_session_manager
+from utils.streaming_session_manger_factory import get_streaming_session_manager
 from storage.s3_storage import S3Storage
 from storage.storage_factory import get_s3_storage
-from db.repositories import TestingVideoRepository, TestingSessionRepository, repository_factory
-from utils.session_manager import SessionManager
+from db.repositories import StreamingVideoRepository, StreamingSessionRepository, repository_factory
+from utils.streaming_session_manager import StreamingSessionManager
 
 
-def get_stream_service(session_manager: SessionManager=Depends(get_session_manager),
+def get_stream_service(streaming_session_manager: StreamingSessionManager=Depends(get_streaming_session_manager),
                        s3_storage: S3Storage = Depends(get_s3_storage),
-                       testing_session_repository: TestingSessionRepository = Depends(repository_factory(TestingSessionRepository)),
-                       testing_video_repository: TestingVideoRepository = Depends(repository_factory(TestingVideoRepository))
+                       streaming_session_repository: StreamingSessionRepository = Depends(repository_factory(StreamingSessionRepository)),
+                       streaming_video_repository: StreamingVideoRepository = Depends(repository_factory(StreamingVideoRepository))
                        ) -> StreamService:
-    return StreamService(session_manager=session_manager,
+    return StreamService(streaming_session_manager=streaming_session_manager,
                          s3_storage=s3_storage,
-                         testing_session_repository=testing_session_repository,
-                         testing_video_repository=testing_video_repository,
+                         streaming_session_repository=streaming_session_repository,
+                         streaming_video_repository=streaming_video_repository,
                          )
