@@ -76,14 +76,13 @@ class StreamService:
         meta = None
         s3_key = None
 
-        if streaming_session.collector and streaming_session.collector.file_name:
-            local_file = await streaming_session.collector.get_output_file_path()
+        if streaming_session.collector and streaming_session.collector.file_exists():
+            file_path = streaming_session.collector.output_file_path
+            object_name = streaming_session.collector.file_name
             meta = await streaming_session.collector.get_metadata()
-
-            object_name = f"{streaming_session.id}.mp4"
             try:
-                logger.info(f"session: {streaming_session.id} - Loading {local_file} → {object_name}")
-                s3_key = await self.s3_storage.upload_multipart(file_path=local_file, object_name=object_name)
+                logger.info(f"session: {streaming_session.id} - Loading {file_path} → {object_name}")
+                s3_key = await self.s3_storage.upload_multipart(file_path=file_path, object_name=object_name)
                 logger.info(f"session: {streaming_session.id} - The video has been successfully uploaded to S3: {object_name}")
             except Exception as e:
                 logger.error(f"session: {streaming_session.id} - Error loading in: {e}")

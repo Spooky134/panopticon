@@ -24,6 +24,3 @@ class BaseFrameCollector:
 
     async def get_metadata(self):
         raise NotImplementedError
-
-    async def get_output_file_path(self):
-        raise NotImplementedError

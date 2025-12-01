@@ -16,13 +16,24 @@ class FrameCollector(BaseFrameCollector):
         self.session_id = session_id
         self.frames = []
 
-        self.temp_dir = f"/tmp/collected_data/"
-        os.makedirs(self.temp_dir, exist_ok=True)
-        self.file_name = f"{session_id}.mp4"
-        self.output_file_path = os.path.join(self.temp_dir, self.file_name)
+        self._temp_dir = f"/tmp/collected_data/"
+        os.makedirs(self._temp_dir, exist_ok=True)
+        self._file_name = f"{session_id}.mp4"
+        self._output_file_path = os.path.join(self._temp_dir, self._file_name)
 
         self._lock = asyncio.Lock()
         self.metadata = None
+
+    @property
+    def file_name(self):
+        return self._file_name
+
+    @property
+    def output_file_path(self):
+        return self._output_file_path
+
+    def file_exists(self):
+        return os.path.exists(self._output_file_path)
 
     async def add_frame(self, frame):
         try:
@@ -37,9 +48,9 @@ class FrameCollector(BaseFrameCollector):
             logger.warning(f"session: {self.session_id} - There are no frames to save.")
             return None
 
-        logger.info(f"session: {self.session_id} - Save {len(self.frames)} frames to {self.output_file_path}")
+        logger.info(f"session: {self.session_id} - Save {len(self.frames)} frames to {self._output_file_path}")
         try:
-            container = av.open(self.output_file_path, mode="w")
+            container = av.open(self._output_file_path, mode="w")
             stream = container.add_stream("libx264", rate=30)
             stream.pix_fmt = "yuv420p"
             stream.width = self.frames[0].shape[1]
@@ -56,35 +67,72 @@ class FrameCollector(BaseFrameCollector):
 
             container.close()
 
-            logger.info(f"session: {self.session_id} - The video is saved locally: {self.output_file_path}")
+            logger.info(f"session: {self.session_id} - the video is saved locally: {self._output_file_path}")
         except Exception as e:
-            logger.error(f"session: {self.session_id} - Error while compiling video: {e}")
+            logger.error(f"session: {self.session_id} - error while compiling video: {e}")
 
-        return self.output_file_path
+        return self._output_file_path
 
     async def cleanup(self):
         logger.info(f"session: {self.session_id} - collector cleaning up")
         try:
-            if os.path.exists(self.output_file_path):
-                os.remove(self.output_file_path)
+            if os.path.exists(self._output_file_path):
+                os.remove(self._output_file_path)
             logger.info(f"session: {self.session_id} - temporary file removed")
         except Exception as e:
             logger.error(f"session: {self.session_id} - error removing temporary file: {e}")
 
-    async def get_output_file_path(self):
-        return self.output_file_path
+
 
     #TODO прокачать метод
     async def get_metadata(self):
+        if self.metadata:
+            return self.metadata
+
+        if not os.path.exists(self._output_file_path):
+            logger.warning(f"session: {self.session_id} - no metadata file found, creating new one")
+            return None
+
+        try:
+            container = av.open(self._output_file_path, mode="r")
+        except Exception as e:
+            logger.error(f"session: {self.session_id} - failed to open video for metadata: {e}")
+            return None
+        video_stream = next((s for s in container.streams if s.type == "video"), None)
+
+        if not video_stream:
+            logger.error(f"session: {self.session_id} - no video stream found in file")
+            return None
+
+        if video_stream.duration is not None and video_stream.time_base is not None:
+            duration = float(video_stream.duration * video_stream.time_base)
+        else:
+            if video_stream.average_rate:
+                duration = float(video_stream.frames) / float(video_stream.average_rate)
+            else:
+                duration = None
+
         file_size = os.path.getsize(self.output_file_path)
-        duration = len(self.frames) / 30.0
+
         mime_type = "video/mp4"
 
-        if not self.metadata:
-            self.metadata = {
-                "duration": duration,
-                "file_size": file_size,
-                "mime_type": mime_type
-            }
+        if video_stream.average_rate:
+            avg_fps = float(video_stream.average_rate)
+        else:
+            avg_fps = None
+
+        self.metadata = {
+            "path": self._output_file_path,
+            "file_size": file_size,
+            "duration": duration,
+            "width": video_stream.codec_context.width,
+            "height": video_stream.codec_context.height,
+            "codec": video_stream.codec_context.name,
+            "frame_count": video_stream.frames if video_stream.frames else None,
+            "fps": avg_fps,
+            "bit_rate": video_stream.bit_rate if video_stream.bit_rate else None,
+            "mime_type": mime_type
+        }
+        container.close()
 
         return self.metadata
