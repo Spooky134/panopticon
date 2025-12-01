@@ -1,5 +1,5 @@
 import asyncio
-from datetime import datetime
+from datetime import datetime, timezone
 from aiortc import RTCSessionDescription, RTCPeerConnection
 from uuid import UUID
 
@@ -23,7 +23,7 @@ class StreamingSession:
         self.collector = collector
         self.started_at = None
         self.finished_at = None
-        self._is_finalized = False
+        # self._is_finalized = False
 
 
     async def start(self, sdp_data: SDPData) -> dict:
@@ -33,7 +33,7 @@ class StreamingSession:
         answer = await self.peer_connection.createAnswer()
         await self.peer_connection.setLocalDescription(answer)
 
-        self.started_at = datetime.now()
+        self.started_at = datetime.now(timezone.utc)
         logger.info(f"session: {self.id} - Started for user {self.user_id}")
 
         #TODO заменить на схему
@@ -61,15 +61,15 @@ class StreamingSession:
 
 
     async def finalize(self):
-        if self._is_finalized:
-            return
+        # if self._is_finalized:
+        #     return
 
         logger.info(f"session: {self.id} - Finalizing session resources...")
-        self._is_finalized = True
+        # self._is_finalized = True
 
         try:
             await self.collector.finalize()
         except Exception as e:
             logger.error(f"session: {self.id} - Collector finalize error: {e}")
 
-        self.finished_at = datetime.now()
+        self.finished_at = datetime.now(timezone.utc)

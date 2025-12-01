@@ -1,8 +1,8 @@
-from .testing_session import TestingSession
-from .testing_video import TestingVideo
+from .streaming_session import StreamingSession
+from .streaming_video import StreamingVideo
 
 
 __all__ = [
-    "TestingVideo",
-    "TestingSession",
+    "StreamingVideo",
+    "StreamingSession",
 ]

@@ -1,7 +1,7 @@
 import os
 import av
 import asyncio
-from datetime import datetime
+from datetime import datetime, timezone
 from uuid import UUID
 
 from sqlalchemy.testing.suite.test_reflection import metadata
@@ -19,7 +19,7 @@ class FrameCollector(BaseFrameCollector):
         super().__init__()
         self.session_id = session_id
         self.frames = []
-        self.start_time = datetime.now()
+        self.start_time = datetime.now(timezone.utc)
         self.output_file = f"/tmp/{session_id}.mp4"
         self._lock = asyncio.Lock()
         self.metadata = None

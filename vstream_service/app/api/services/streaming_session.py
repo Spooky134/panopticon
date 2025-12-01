@@ -1,6 +1,6 @@
 import os
 import uuid
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import jwt
 
 from api.schemas.streaming_session import StreamingSessionCreate, StreamingSessionResponse
@@ -31,6 +31,7 @@ class StreamingSessionService:
             "test_id": uuid.uuid4(),
             "user_id": streaming_session_create.user_id,
             "status": "created",
+            "created_at": datetime.now(timezone.utc),
         }
 
         streaming_session_created = await self.streaming_session_repository.create(streaming_session_data=new_streaming_session)

@@ -1,5 +1,6 @@
 import os
 from datetime import datetime
+from datetime import datetime, timedelta, timezone
 
 from core.security.token import verify_token
 from utils.streaming_session_manager import StreamingSessionManager
@@ -56,21 +57,20 @@ class StreamService:
         s3_key, meta = await self._save_data_to_s3(streaming_session)
 
         data = {
-            "testing_session_id": streaming_session.id,
+            "streaming_session_id": streaming_session.id,
             "s3_key": s3_key,
             "s3_bucket": self.s3_storage.bucket_name,
             "duration": meta.get("duration"),
             "file_size": meta.get("file_size"),
             "mime_type": meta.get("mime_type"),
-            "created_at": datetime.now()
+            "created_at": datetime.now(timezone.utc)
         }
 
         await self.streaming_video_repository.create(data=data)
 
-        await self.streaming_session_repository.update(streaming_session.id, {
-            "status": "finished",
-            "ended_at": streaming_session.finished_at,
-        })
+        await self.streaming_session_repository.update(streaming_session_id=streaming_session.id,
+                                                       data={"status": "finished",
+                                                             "ended_at": streaming_session.finished_at})
 
     async def _save_data_to_s3(self, streaming_session: StreamingSession):
         meta = None

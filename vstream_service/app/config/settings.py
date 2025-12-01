@@ -1,9 +1,6 @@
 from aiortc import RTCIceServer
-from dotenv import load_dotenv
 
 from pydantic_settings import BaseSettings
-
-
 
 
 class Settings(BaseSettings):
