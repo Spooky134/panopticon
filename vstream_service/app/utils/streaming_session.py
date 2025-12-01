@@ -23,7 +23,6 @@ class StreamingSession:
         self.collector = collector
         self.started_at = None
         self.finished_at = None
-        # self._is_finalized = False
 
 
     async def start(self, sdp_data: SDPData) -> dict:
@@ -61,12 +60,7 @@ class StreamingSession:
 
 
     async def finalize(self):
-        # if self._is_finalized:
-        #     return
-
         logger.info(f"session: {self.id} - Finalizing session resources...")
-        # self._is_finalized = True
-
         try:
             await self.collector.finalize()
         except Exception as e:

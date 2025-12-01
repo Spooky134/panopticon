@@ -11,7 +11,7 @@ logger = get_logger(__name__)
 #TODO контекстный менеджер или функция с конеткстом
 class BaseFrameCollector:
     def __init__(self):
-        self.output_file = None
+        pass
 
     async def add_frame(self, frame):
         raise NotImplementedError
@@ -19,5 +19,11 @@ class BaseFrameCollector:
     async def finalize(self):
         raise NotImplementedError
 
+    async def cleanup(self):
+        raise NotImplementedError
+
     async def get_metadata(self):
+        raise NotImplementedError
+
+    async def get_output_file_path(self):
         raise NotImplementedError

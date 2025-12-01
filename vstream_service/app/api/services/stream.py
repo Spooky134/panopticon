@@ -28,7 +28,7 @@ class StreamService:
 
     async def offer(self, token, sdp_data: SDPData) -> dict:
         payload = verify_token(token)
-        user_id = payload["user_id"]
+        user_id = int(payload["user_id"])
         streaming_session_id = payload["streaming_session_id"]
 
         logger.info(f"session: {streaming_session_id} - Authorized user {user_id} starting stream")
@@ -76,20 +76,17 @@ class StreamService:
         meta = None
         s3_key = None
 
-        if streaming_session.collector:
-            if streaming_session.collector.output_file:
-                local_file = streaming_session.collector.output_file
-                meta = await streaming_session.collector.get_metadata()
+        if streaming_session.collector and streaming_session.collector.file_name:
+            local_file = await streaming_session.collector.get_output_file_path()
+            meta = await streaming_session.collector.get_metadata()
 
-                object_name = f"{streaming_session.id}.mp4"
-                try:
-                    logger.info(f"session: {streaming_session.id} - Loading {local_file} → {object_name}")
-                    s3_key = await self.s3_storage.upload_multipart(file_path=local_file, object_name=object_name)
-                    # TODO удаление видео
-                    os.remove(local_file)
-                    logger.info(f"session: {streaming_session.id} - The video has been successfully uploaded to S3: {object_name}")
-                except Exception as e:
-                    logger.error(f"session: {streaming_session.id} - Error loading in: {e}")
+            object_name = f"{streaming_session.id}.mp4"
+            try:
+                logger.info(f"session: {streaming_session.id} - Loading {local_file} → {object_name}")
+                s3_key = await self.s3_storage.upload_multipart(file_path=local_file, object_name=object_name)
+                logger.info(f"session: {streaming_session.id} - The video has been successfully uploaded to S3: {object_name}")
+            except Exception as e:
+                logger.error(f"session: {streaming_session.id} - Error loading in: {e}")
 
 
         return s3_key, meta

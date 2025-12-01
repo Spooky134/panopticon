@@ -18,7 +18,7 @@ async def get_token(credentials: HTTPAuthorizationCredentials = Depends(security
     return credentials.credentials
 
 
-def verify_token(token: str):
+def verify_token(token: str) -> dict:
     """
     Проверяет JWT токен и возвращает payload.
     Ожидает объект credentials (HTTPAuthorizationCredentials).

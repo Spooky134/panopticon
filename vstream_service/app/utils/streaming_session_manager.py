@@ -86,6 +86,8 @@ class StreamingSessionManager:
             return_exceptions=True,
         )
 
+        await streaming_session.collector.cleanup()
+
         self.streaming_sessions.pop(streaming_session_id, None)
         logger.info(f"session: {streaming_session_id} - Cleaned up")
 

@@ -24,7 +24,6 @@ class VideoProcessor(BaseProcessor):
         self.processing_task = None
 
     async def start(self):
-        """Запускает обработку кадров через gRPC"""
         self.processing_task = asyncio.create_task(self._process_stream())
 
     async def stop(self):
@@ -37,18 +36,13 @@ class VideoProcessor(BaseProcessor):
         await self.channel.close()
 
     async def process_frame(self, frame) -> av.VideoFrame:
-        """Добавляет кадр в очередь на обработку и возвращает результат"""
-        # Конвертируем кадр в JPEG
         img = frame.to_ndarray(format="bgr24")
         _, jpeg_bytes = cv2.imencode(".jpg", img)
 
-        # Отправляем в gRPC сервер
         await self.request_queue.put(jpeg_bytes.tobytes())
 
-        # Ждем результат
         processed_data = await self.response_queue.get()
 
-        # Создаем новый кадр из результата
         nparr = np.frombuffer(processed_data, np.uint8)
         processed_img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
 
@@ -58,7 +52,6 @@ class VideoProcessor(BaseProcessor):
         return new_frame
 
     async def _process_stream(self):
-        """Фоновая задача для потоковой передачи кадров"""
         try:
             async def request_generator():
                 while True:
