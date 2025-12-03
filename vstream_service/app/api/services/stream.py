@@ -1,4 +1,5 @@
 import os
+import uuid
 from datetime import datetime
 from datetime import datetime, timedelta, timezone
 
@@ -33,59 +34,57 @@ class StreamService:
 
         logger.info(f"session: {streaming_session_id} - Authorized user {user_id} starting stream")
 
-        answer = await self.streaming_session_manager.initiate_session(
-            streaming_session_id=streaming_session_id,
-            user_id=int(user_id),
-            sdp_data=sdp_data,
-            on_streaming_session_started=self._started_update,
-            on_streaming_session_finished=self._finished_update,
-        )
+        await self.streaming_session_manager.create_streaming_session(user_id=user_id,
+                                                                      streaming_session_id=streaming_session_id,
+                                                                      on_streaming_session_started=self._started_update,
+                                                                      on_streaming_session_finished=self._finished_update)
+
+        answer = await self.streaming_session_manager.start_streaming_session(streaming_session_id=streaming_session_id,
+                                                                              sdp_data=sdp_data)
 
         return answer
 
 
-    async def _started_update(self, streaming_session: StreamingSession):
-        streaming_session_updated = await self.streaming_session_repository.update(streaming_session_id=streaming_session.id,
-                                                                                   data={
-                                                                                       "status": "running",
-                                                                                       "started_at": streaming_session.started_at
-                                                                                   })
 
-    async def _finished_update(self, streaming_session: StreamingSession):
-        logger.info(f"StreamService: Saving session: id - {streaming_session.id}")
+    async def _started_update(self, streaming_session_id: uuid.UUID, started_at: datetime):
+        await self.streaming_session_repository.update(streaming_session_id=streaming_session_id,
+                                                       data={"status": "running",
+                                                             "started_at": started_at})
 
-        s3_key, meta = await self._save_data_to_s3(streaming_session)
+    async def _finished_update(self,
+                               streaming_session_id: uuid.UUID,
+                               finished_at: datetime,
+                               file_path: str,
+                               file_name: str,
+                               video_meta: dict):
+        logger.info(f"StreamService: Saving session: id - {streaming_session_id}")
 
-        data = {
-            "streaming_session_id": streaming_session.id,
-            "s3_key": s3_key,
-            "s3_bucket": self.s3_storage.bucket_name,
-            "duration": meta.get("duration"),
-            "file_size": meta.get("file_size"),
-            "mime_type": meta.get("mime_type"),
-            "created_at": datetime.now(timezone.utc)
-        }
+        s3_key = await self._save_data_to_s3(streaming_session_id=streaming_session_id,
+                                             file_path=file_path,
+                                             object_name=file_name)
+
+        data = {"streaming_session_id": streaming_session_id,
+                "s3_key": s3_key,
+                "s3_bucket": self.s3_storage.bucket_name,
+                "duration": video_meta.get("duration", None),
+                "file_size": video_meta.get("file_size", None),
+                "mime_type": video_meta.get("mime_type", None),
+                "created_at": datetime.now(timezone.utc)}
 
         await self.streaming_video_repository.create(data=data)
 
-        await self.streaming_session_repository.update(streaming_session_id=streaming_session.id,
+        await self.streaming_session_repository.update(streaming_session_id=streaming_session_id,
                                                        data={"status": "finished",
-                                                             "ended_at": streaming_session.finished_at})
+                                                             "ended_at": finished_at})
 
-    async def _save_data_to_s3(self, streaming_session: StreamingSession):
-        meta = None
+    async def _save_data_to_s3(self, streaming_session_id: uuid.UUID, file_path:str, object_name:str):
         s3_key = None
-
-        if streaming_session.collector and streaming_session.collector.file_exists():
-            file_path = streaming_session.collector.output_file_path
-            object_name = streaming_session.collector.file_name
-            meta = await streaming_session.collector.get_metadata()
-            try:
-                logger.info(f"session: {streaming_session.id} - Loading {file_path} → {object_name}")
-                s3_key = await self.s3_storage.upload_multipart(file_path=file_path, object_name=object_name)
-                logger.info(f"session: {streaming_session.id} - The video has been successfully uploaded to S3: {object_name}")
-            except Exception as e:
-                logger.error(f"session: {streaming_session.id} - Error loading in: {e}")
+        try:
+            logger.info(f"session: {streaming_session_id} - Loading {file_path} → {object_name}")
+            s3_key = await self.s3_storage.upload_multipart(file_path=file_path, object_name=object_name)
+            logger.info(f"session: {streaming_session_id} - The video has been successfully uploaded to S3: {object_name}")
+        except Exception as e:
+            logger.error(f"session: {streaming_session_id} - Error loading in: {e}")
 
 
-        return s3_key, meta
+        return s3_key

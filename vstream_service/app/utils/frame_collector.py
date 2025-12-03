@@ -22,7 +22,7 @@ class FrameCollector(BaseFrameCollector):
         self._output_file_path = os.path.join(self._temp_dir, self._file_name)
 
         self._lock = asyncio.Lock()
-        self.metadata = None
+        self._metadata = None
 
     @property
     def file_name(self):
@@ -83,11 +83,9 @@ class FrameCollector(BaseFrameCollector):
             logger.error(f"session: {self.session_id} - error removing temporary file: {e}")
 
 
-
-    #TODO прокачать метод
     async def get_metadata(self):
-        if self.metadata:
-            return self.metadata
+        if self._metadata:
+            return self._metadata
 
         if not os.path.exists(self._output_file_path):
             logger.warning(f"session: {self.session_id} - no metadata file found, creating new one")
@@ -121,7 +119,7 @@ class FrameCollector(BaseFrameCollector):
         else:
             avg_fps = None
 
-        self.metadata = {
+        self._metadata = {
             "path": self._output_file_path,
             "file_size": file_size,
             "duration": duration,
@@ -135,4 +133,4 @@ class FrameCollector(BaseFrameCollector):
         }
         container.close()
 
-        return self.metadata
+        return self._metadata
