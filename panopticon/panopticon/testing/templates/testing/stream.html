@@ -73,7 +73,15 @@
         toggleButton.disabled = true;
         toggleButton.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Connecting...';
 
-        localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+        localStream = await navigator.mediaDevices.getUserMedia({
+                video: {
+                  width: { ideal: 1280 },
+                  height: { ideal: 720 },
+                  frameRate: { ideal: 30, max: 30 }
+                },
+                audio: false
+              });
+        
         localVideo.srcObject = localStream;
         localStatus.textContent = "Active";
         localStatus.className = "badge bg-success";
