@@ -57,11 +57,16 @@ class StreamService:
                                file_path: str,
                                file_name: str,
                                video_meta: dict):
-        logger.info(f"StreamService: Saving session: id - {streaming_session_id}")
+        logger.info(f"session: {streaming_session_id} - saving results...")
 
-        s3_key = await self._save_data_to_s3(streaming_session_id=streaming_session_id,
-                                             file_path=file_path,
-                                             object_name=file_name)
+        s3_key=None
+
+        try:
+            s3_key = await self._save_data_to_s3(streaming_session_id=streaming_session_id,
+                                                 file_path=file_path,
+                                                 object_name=file_name)
+        except Exception as e:
+            logger.error(f"session: {streaming_session_id} - error to save video to s3: {e}")
 
         data = {"streaming_session_id": streaming_session_id,
                 "s3_key": s3_key,
