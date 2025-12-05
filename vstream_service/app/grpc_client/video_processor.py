@@ -1,3 +1,5 @@
+import time
+
 import av
 import cv2
 import numpy as np
@@ -35,21 +37,25 @@ class VideoProcessor(BaseProcessor):
                 pass
         await self.channel.close()
 
-    async def process_frame(self, frame) -> av.VideoFrame:
+# TODO может не преобразовывать кадры при передаче в jpg??
+    async def process_frame(self, frame, ts) -> tuple[av.VideoFrame, float]:
         img = frame.to_ndarray(format="bgr24")
         _, jpeg_bytes = cv2.imencode(".jpg", img)
 
-        await self.request_queue.put(jpeg_bytes.tobytes())
 
-        processed_data = await self.response_queue.get()
 
-        nparr = np.frombuffer(processed_data, np.uint8)
+        await self.request_queue.put({"jpeg": jpeg_bytes.tobytes(),
+                                      "ts":ts})
+
+        response = await self.response_queue.get()
+
+        nparr = np.frombuffer(response.processed_image, np.uint8)
         processed_img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
 
         new_frame = av.VideoFrame.from_ndarray(processed_img, format="bgr24")
         new_frame.pts = frame.pts
         new_frame.time_base = frame.time_base
-        return new_frame
+        return new_frame, response.ts
 
     async def _process_stream(self):
         try:
@@ -58,11 +64,12 @@ class VideoProcessor(BaseProcessor):
                     frame_data = await self.request_queue.get()
                     yield ml_worker_pb2.FrameRequest(
                         session_id=self.session_id,
-                        image=frame_data
+                        image=frame_data["jpeg"],
+                        ts=frame_data["ts"],
                     )
 
             async for response in self.stub.StreamFrames(request_generator()):
-                await self.response_queue.put(response.processed_image)
+                await self.response_queue.put(response)
 
         except asyncio.CancelledError:
             logger.info(f"session: {self.session_id} - gRPC stream is stopped")

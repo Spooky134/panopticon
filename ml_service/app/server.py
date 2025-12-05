@@ -17,6 +17,7 @@ class MLServiceServicer(ml_worker_pb2_grpc.MLServiceServicer):
             async for request in request_iterator:
                 # Логируем получение кадра для сессии
                 print(f"Обрабатываем кадр для сессии: {request.session_id}")
+                print(f'time stamp: {request.ts}')
                 
                 # Декодируем JPEG → numpy
                 nparr = np.frombuffer(request.image, np.uint8)
@@ -38,7 +39,8 @@ class MLServiceServicer(ml_worker_pb2_grpc.MLServiceServicer):
                 # Возвращаем результат
                 yield ml_worker_pb2.FrameResponse(
                     processed_image=jpeg_bytes.tobytes(),
-                    comment=f"Обработан кадр для сессии {request.session_id}"
+                    comment=f"Обработан кадр для сессии {request.session_id}",
+                    ts=request.ts,
                 )
                 
         except Exception as e:

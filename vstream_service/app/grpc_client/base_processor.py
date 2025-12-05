@@ -11,5 +11,5 @@ class BaseProcessor:
     async def stop(self):
         raise NotImplementedError
 
-    async def process_frame(self, frame: av.VideoFrame) -> av.VideoFrame:
+    async def process_frame(self, frame: av.VideoFrame, ts) -> av.VideoFrame:
         raise NotImplementedError

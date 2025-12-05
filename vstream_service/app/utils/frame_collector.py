@@ -23,6 +23,7 @@ class FrameCollector(BaseFrameCollector):
         self._output_file_path = os.path.join(self._temp_dir, self._file_name)
 
         self._lock = asyncio.Lock()
+
         self._metadata = None
 
         self._container = av.open(self._output_file_path, mode="w")
@@ -91,7 +92,7 @@ class FrameCollector(BaseFrameCollector):
         except Exception as e:
             logger.error(f"session: {self._session_id} - error getting metadata: {e}")
 
-        return self._output_file_path, self._metadata
+        return self._output_file_path, self._file_name, self._metadata
 
     async def cleanup(self):
         logger.info(f"session: {self._session_id} - collector cleaning up")
@@ -137,7 +138,6 @@ class FrameCollector(BaseFrameCollector):
             avg_fps = None
 
         self._metadata = {
-            "path": self._output_file_path,
             "file_size": file_size,
             "duration": duration,
             "width": video_stream.codec_context.width,

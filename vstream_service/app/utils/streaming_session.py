@@ -98,16 +98,10 @@ class StreamingSession:
 
         try:
             logger.info(f"session: {self._id} - finalizing session resources...")
-            await self._collector.finalize()
+            video_file_path, video_file_name, video_meta = await self._collector.finalize()
         except Exception as e:
             logger.error(f"session: {self._id} - finalize error: {e}")
 
-        try:
-            video_file_path = self._collector.output_file_path
-            video_file_name = self._collector.file_name
-            video_meta = await self._collector.get_metadata()
-        except Exception as e:
-            logger.error(f"session: {self._id} - metadata read error: {e}")
 
         return video_file_path, video_file_name, video_meta
 

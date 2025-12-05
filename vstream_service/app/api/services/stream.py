@@ -3,6 +3,8 @@ import uuid
 from datetime import datetime
 from datetime import datetime, timedelta, timezone
 
+from attr.filters import exclude
+
 from core.security.token import verify_token
 from utils.streaming_session_manager import StreamingSessionManager
 from api.schemas.sdp import SDPData
@@ -68,12 +70,23 @@ class StreamService:
         except Exception as e:
             logger.error(f"session: {streaming_session_id} - error to save video to s3: {e}")
 
+        meta = {key: video_meta[key] for key in video_meta.keys() if key not in ["duration",
+                                                                                 "file_size",
+                                                                                 "mime_type",
+                                                                                 "width",
+                                                                                 "height",
+                                                                                 "fps",]}
+
         data = {"streaming_session_id": streaming_session_id,
                 "s3_key": s3_key,
                 "s3_bucket": self.s3_storage.bucket_name,
                 "duration": video_meta.get("duration", None),
+                "fps": video_meta.get("fps", None),
                 "file_size": video_meta.get("file_size", None),
                 "mime_type": video_meta.get("mime_type", None),
+                "width": video_meta.get("width", None),
+                "height": video_meta.get("height", None),
+                "meta": meta,
                 "created_at": datetime.now(timezone.utc)}
 
         await self.streaming_video_repository.create(data=data)
