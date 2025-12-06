@@ -100,6 +100,7 @@ class StreamService:
         try:
             logger.info(f"session: {streaming_session_id} - Loading {file_path} → {object_name}")
             s3_key = await self.s3_storage.upload_multipart(file_path=file_path, object_name=object_name)
+            #TODO говорит все успешно хотя загрузки небыло
             logger.info(f"session: {streaming_session_id} - The video has been successfully uploaded to S3: {object_name}")
         except Exception as e:
             logger.error(f"session: {streaming_session_id} - Error loading in: {e}")

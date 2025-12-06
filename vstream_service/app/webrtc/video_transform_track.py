@@ -18,10 +18,11 @@ class VideoTransformTrack(VideoStreamTrack):
 
     async def recv(self) -> av.VideoFrame:
         frame = await self.track.recv()
-        first_ts = time.time()
-        processed, first_ts = await self.processor.process_frame(frame, first_ts)
-        second_ts = time.time()
-        logger.info(f"session: {self.processor.session_id} - grpc video processor latency= {second_ts - first_ts} ms")
+        first_ts = time.time_ns()
+        logger.info(f"RECV: frame ts = {first_ts}")
+        processed, ts = await self.processor.process_frame(frame, first_ts)
+        second_ts = time.time_ns()
+        logger.info(f"session: {self.processor.session_id} - grpc video processor latency= { (second_ts - ts) / 1_000_000 } ms")
         if self.collector:
             try:
                 await self.collector.add_frame(processed)

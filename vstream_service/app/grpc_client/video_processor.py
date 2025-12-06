@@ -21,8 +21,8 @@ class VideoProcessor(BaseProcessor):
         super().__init__(session_id)
         self.channel = grpc.aio.insecure_channel(settings.ML_SERVICE_URL)
         self.stub = ml_worker_pb2_grpc.MLServiceStub(self.channel)
-        self.request_queue = asyncio.Queue(100)
-        self.response_queue = asyncio.Queue(100)
+        self.request_queue = asyncio.Queue(50)
+        self.response_queue = asyncio.Queue(50)
         self.processing_task = None
 
     async def start(self):
@@ -38,7 +38,7 @@ class VideoProcessor(BaseProcessor):
         await self.channel.close()
 
 # TODO может не преобразовывать кадры при передаче в jpg??
-    async def process_frame(self, frame, ts) -> tuple[av.VideoFrame, float]:
+    async def process_frame(self, frame, ts) -> tuple[av.VideoFrame, int]:
         img = frame.to_ndarray(format="bgr24")
         _, jpeg_bytes = cv2.imencode(".jpg", img)
 
@@ -46,7 +46,6 @@ class VideoProcessor(BaseProcessor):
 
         await self.request_queue.put({"jpeg": jpeg_bytes.tobytes(),
                                       "ts":ts})
-
         response = await self.response_queue.get()
 
         nparr = np.frombuffer(response.processed_image, np.uint8)
@@ -65,7 +64,7 @@ class VideoProcessor(BaseProcessor):
                     yield ml_worker_pb2.FrameRequest(
                         session_id=self.session_id,
                         image=frame_data["jpeg"],
-                        ts=frame_data["ts"],
+                        ts=frame_data["ts"]
                     )
 
             async for response in self.stub.StreamFrames(request_generator()):
@@ -74,6 +73,6 @@ class VideoProcessor(BaseProcessor):
         except asyncio.CancelledError:
             logger.info(f"session: {self.session_id} - gRPC stream is stopped")
         except Exception as e:
-            logger.error(f"session:{self.session_id} - Error in gRPC stream: {e}")
+            logger.error(f"session:{self.session_id} - error in gRPC stream: {e}")
 
 
