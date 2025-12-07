@@ -67,7 +67,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'core.apps.CoreConfig',
     'account.apps.AccountConfig',
-    'testing.apps.TestingConfig',
+    'streaming.apps.StreamingConfig',
 ]
 
 MIDDLEWARE = [

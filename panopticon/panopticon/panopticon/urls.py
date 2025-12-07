@@ -23,7 +23,8 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include('core.urls', namespace="core")),
     path('account/', include('account.urls', namespace='account')),
-    path('video-testing/', include('testing.urls', namespace='testing')),
+    #TODO переименовать на streaming/
+    path('streaming/', include('streaming.urls', namespace='streaming')),
     
 ]
 

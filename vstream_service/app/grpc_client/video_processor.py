@@ -43,8 +43,8 @@ class VideoProcessor(BaseProcessor):
         img = frame.to_ndarray(format="bgr24")
         _, jpeg_bytes = cv2.imencode(".jpg", img)
 
-        logger.info(f"session: {self.session_id} - grpc request queue= {self.request_queue.qsize()}")
-        logger.info(f"session: {self.session_id} - grpc response queue= {self.response_queue.qsize()}")
+        # logger.info(f"session: {self.session_id} - grpc request queue= {self.request_queue.qsize()}")
+        # logger.info(f"session: {self.session_id} - grpc response queue= {self.response_queue.qsize()}")
 
 
         await self.request_queue.put({"jpeg": jpeg_bytes.tobytes(),
