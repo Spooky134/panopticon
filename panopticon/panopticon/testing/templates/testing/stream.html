@@ -79,9 +79,60 @@
                   height: { ideal: 720 },
                   bitrate: { max: 2000000 },
                   frameRate: { ideal: 30, max: 30 }
+
                 },
                 audio: false
               });
+        // ---- VIDEO TIMESTAMP ENCODING ----
+// берём оригинальный трек
+        const inputTrack = localStream.getVideoTracks()[0];
+
+        // создаём процессор и генератор
+        const processor = new MediaStreamTrackProcessor({ track: inputTrack });
+        const generator = new MediaStreamTrackGenerator({ kind: "video" });
+
+        const reader = processor.readable.getReader();
+        const writer = generator.writable.getWriter();
+
+        // запускаем цикл обработки кадров
+        (async () => {
+          while (true) {
+            const { value: frame } = await reader.read();
+            if (!frame) break;
+
+            const ts = Math.floor(performance.now());  // timestamp ms
+
+            // рисуем кадр на canvas
+            const bitmap = await createImageBitmap(frame);
+            const canvas = new OffscreenCanvas(bitmap.width, bitmap.height);
+            const ctx = canvas.getContext("2d");
+            ctx.drawImage(bitmap, 0, 0);
+
+            const img = ctx.getImageData(0, 0, 8, 1);
+
+            let t = BigInt(ts);
+
+            for (let i = 0; i < 8; i++) {
+                img.data[i * 4 + 3] = Number(t & 0xFFn);  // пишем в ALPHA
+                t >>= 8n;
+            }
+
+            ctx.putImageData(img, 0, 0);
+
+            // создаём новый кадр
+            const newFrame = new VideoFrame(canvas, {
+              timestamp: frame.timestamp,   // сохраняем PTS
+            });
+
+            frame.close();
+            await writer.write(newFrame);
+          }
+        })();
+
+        // заменяем трек в стриме
+        localStream.removeTrack(inputTrack);
+        localStream.addTrack(generator);
+
         
         localVideo.srcObject = localStream;
         localStatus.textContent = "Active";
@@ -94,7 +145,8 @@
           ]
         });
 
-        localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
+        {% comment %} localStream.getTracks().forEach(track => pc.addTrack(track, localStream)); {% endcomment %}
+        pc.addTrack(generator, localStream);
 
         pc.ontrack = event => {
           remoteVideo.srcObject = event.streams[0];
