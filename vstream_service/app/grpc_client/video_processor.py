@@ -6,6 +6,7 @@ import numpy as np
 import asyncio
 import grpc
 from uuid import UUID
+import zlib
 
 import ml_worker_pb2
 import ml_worker_pb2_grpc
@@ -21,8 +22,8 @@ class VideoProcessor(BaseProcessor):
         super().__init__(session_id)
         self.channel = grpc.aio.insecure_channel(settings.ML_SERVICE_URL)
         self.stub = ml_worker_pb2_grpc.MLServiceStub(self.channel)
-        self.request_queue = asyncio.Queue(50)
-        self.response_queue = asyncio.Queue(50)
+        self.request_queue = asyncio.Queue(150)
+        self.response_queue = asyncio.Queue(150)
         self.processing_task = None
 
     async def start(self):
@@ -42,6 +43,8 @@ class VideoProcessor(BaseProcessor):
         img = frame.to_ndarray(format="bgr24")
         _, jpeg_bytes = cv2.imencode(".jpg", img)
 
+        logger.info(f"session: {self.session_id} - grpc request queue= {self.request_queue.qsize()}")
+        logger.info(f"session: {self.session_id} - grpc response queue= {self.response_queue.qsize()}")
 
 
         await self.request_queue.put({"jpeg": jpeg_bytes.tobytes(),

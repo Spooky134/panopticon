@@ -16,8 +16,8 @@ class MLServiceServicer(ml_worker_pb2_grpc.MLServiceServicer):
         try:
             async for request in request_iterator:
                 # Логируем получение кадра для сессии
-                print(f"Обрабатываем кадр для сессии: {request.session_id}")
-                print(f'ML_WORKER: {request.ts}')
+                # print(f"Обрабатываем кадр для сессии: {request.session_id}")
+                # print(f'ML_WORKER: {request.ts}')
                 
                 # Декодируем JPEG → numpy
                 nparr = np.frombuffer(request.image, np.uint8)
