@@ -22,13 +22,14 @@ class WebStreamView(View):
                                  headers={"X-Api-Key": settings.SECRET_KEY})
                                  # timeout=3)
         data = response.json()
-
+        streaming_session_id = data.get("streaming_session_id")
+        vstream_service_url = f"{settings.VSTREAM_WEBRTC_URL}/{streaming_session_id}/offer"
         context = {
-            'vstream_service_url': settings.VSTREAM_WEBRTC_URL,
-            'auth_token': data.get("token"),
+            'vstream_service_url': vstream_service_url,
             'turn_url': settings.TURN_URL,
             'turn_username': settings.TURN_USERNAME,
             'turn_password': settings.TURN_PASSWORD,
+            'api_secret_key': settings.SECRET_KEY,
         }
         return render(request, 'streaming/streaming.html', context)
 

@@ -1,5 +1,5 @@
 import asyncio
-import uuid
+from uuid import UUID
 
 from aiortc import RTCConfiguration
 
@@ -13,7 +13,6 @@ from grpc_client.processor_manager import ProcessorManager
 from core.logger import get_logger
 from datetime import datetime
 from config import settings
-from uuid import UUID
 from utils.frame_collector import FrameCollector
 
 
@@ -40,7 +39,7 @@ class StreamingSessionManager:
     async def create_streaming_session(self, user_id:int,
                                        streaming_session_id: UUID,
                                        on_streaming_session_started=None,
-                                       on_streaming_session_finished=None) -> uuid.UUID:
+                                       on_streaming_session_finished=None) -> UUID:
 
         self._on_streaming_session_started = on_streaming_session_started
         self._on_streaming_session_finished = on_streaming_session_finished
@@ -65,12 +64,10 @@ class StreamingSessionManager:
         )
 
         self.streaming_sessions[streaming_session_id] = session
-        logger.info(f"session: {streaming_session_id} - Created for user {user_id}")
-
-        return session.id
+        return streaming_session_id
 
     async def start_streaming_session(self, streaming_session_id: UUID, sdp_data: SDPData) -> dict:
-        session = self.streaming_sessions.get(streaming_session_id)
+        session: StreamingSession = await self.get_streaming_session(streaming_session_id)
         if session is None:
             raise ValueError("session not found")
 
@@ -83,12 +80,12 @@ class StreamingSessionManager:
 
 
     async def dispose_streaming_session(self, streaming_session_id: UUID):
-        logger.info(f"session: {streaming_session_id} - Cleaning up")
+        logger.info(f"session: {streaming_session_id} - cleaning up")
         session = self.streaming_sessions.pop(streaming_session_id, None)
 
         video_file_path, video_file_name, video_meta = await session.finalize()
         try:
-            await self._on_streaming_session_finished(streaming_session_id=session.id,
+            await self._on_streaming_session_finished(streaming_session_id=streaming_session_id,
                                                       finished_at=session.finished_at,
                                                       file_path=video_file_path,
                                                       file_name=video_file_name,
@@ -108,7 +105,7 @@ class StreamingSessionManager:
         )
 
     async def get_streaming_session(self, streaming_session_id: UUID) -> StreamingSession:
-        return self.streaming_sessions.get(streaming_session_id)
+        return self.streaming_sessions.get(streaming_session_id, None)
 
     async def dispose_all_sessions(self):
         for streaming_session_id in self.streaming_sessions.keys():

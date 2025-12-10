@@ -28,4 +28,4 @@ class ConnectionManager:
         pc = self.peer_connections.pop(session_id, None)
         if pc:
             await pc.close()
-        logger.info(f"peer_connection: {session_id} - Is closed")
+        logger.info(f"peer_connection: {session_id} - is closed")

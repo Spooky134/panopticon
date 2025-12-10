@@ -17,6 +17,7 @@ from core.logger import get_logger
 
 logger = get_logger(__name__)
 
+#TODO если возвращать UUID в ответе то нужно привести к UUID
 class VideoProcessor(BaseProcessor):
     def __init__(self, session_id: UUID):
         super().__init__(session_id)
@@ -65,7 +66,7 @@ class VideoProcessor(BaseProcessor):
                 while True:
                     frame_data = await self.request_queue.get()
                     yield ml_worker_pb2.FrameRequest(
-                        session_id=self.session_id,
+                        session_id=str(self.session_id),
                         image=frame_data["jpeg"],
                         ts=frame_data["ts"]
                     )

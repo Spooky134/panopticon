@@ -52,7 +52,8 @@
     turnURL: "{{ turn_url }}",
     turnUsername: "{{ turn_username }}",
     turnPassword: "{{ turn_password }}",
-    authToken: "{{ auth_token }}"
+    authToken: "{{ auth_token }}",
+    apiSecretKey: "{{ api_secret_key }}",
   };
 
   // ... остальной JavaScript код без изменений ...
@@ -119,7 +120,7 @@
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            "Authorization": `Bearer ${CONFIG.authToken}`
+            "X-Api-Key": CONFIG.apiSecretKey
           },
           body: JSON.stringify({ sdp: offer.sdp, type: offer.type })
         });

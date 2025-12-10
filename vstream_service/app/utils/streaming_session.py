@@ -43,7 +43,7 @@ class StreamingSession:
 
 
     @property
-    def id(self):
+    def id(self) -> UUID:
         return self._id
 
 

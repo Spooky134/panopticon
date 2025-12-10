@@ -1,4 +1,4 @@
-import uuid
+from uuid import UUID
 
 from api.services.streaming_session import StreamingSessionService
 from api.services.streaming_session_factory import get_streaming_session_service
@@ -20,8 +20,8 @@ async def create_session(streaming_session_create: StreamingSessionCreate,
     return await streaming_session_service.create_session(streaming_session_create=streaming_session_create)
 
 
-@router.get("/{streaming_session_id}", response_model=StreamingSessionResponseInfo, dependencies=[Depends(get_api_key)])
-async def get_session(streaming_session_id: uuid.UUID,
+@router.get("/{streaming_session_id}", response_model=StreamingSessionResponse, dependencies=[Depends(get_api_key)])
+async def get_session(streaming_session_id: UUID,
                       streaming_session_service: StreamingSessionService = Depends(get_streaming_session_service)):
 
     return await streaming_session_service.read_session(streaming_session_id=streaming_session_id)

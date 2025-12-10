@@ -5,7 +5,7 @@ from sqlalchemy import exists, select, update, delete
 from sqlalchemy.orm import selectinload, joinedload
 from db.models import StreamingSession
 from core.logger import get_logger
-import uuid
+from uuid import UUID
 
 
 logger = get_logger(__name__)
@@ -14,7 +14,7 @@ class StreamingSessionRepository:
     def __init__(self, db: AsyncSession):
         self.db = db
 
-    async def get(self, streaming_session_id: uuid.UUID) -> Optional[StreamingSession]:
+    async def get(self, streaming_session_id: UUID) -> Optional[StreamingSession]:
         result = await self.db.execute(
             select(StreamingSession).
             options(joinedload(StreamingSession.video)).
@@ -30,7 +30,7 @@ class StreamingSessionRepository:
 
         return await self.get(streaming_session_id=new_streaming_session.id)
 
-    async def update(self, streaming_session_id: uuid.UUID, data: dict) -> Optional[StreamingSession]:
+    async def update(self, streaming_session_id: UUID, data: dict) -> Optional[StreamingSession]:
         streaming_session = await self.get(streaming_session_id=streaming_session_id)
         if not streaming_session:
             logger.warning(f"testing_session: {streaming_session_id} -  Not found in DB.")

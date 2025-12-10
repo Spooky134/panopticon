@@ -1,8 +1,9 @@
 import av
+from uuid import UUID
 
 
 class BaseProcessor:
-    def __init__(self, session_id):
+    def __init__(self, session_id: UUID):
         self.session_id = session_id
 
     async def start(self):

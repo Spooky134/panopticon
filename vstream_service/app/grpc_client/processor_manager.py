@@ -17,7 +17,7 @@ class ProcessorManager:
         await processor.start()
         self.processors[session_id] = processor
 
-        return processor
+        return await self.get_processor(session_id)
 
     async def get_processor(self, session_id: UUID) -> VideoProcessor:
         return self.processors.get(session_id)

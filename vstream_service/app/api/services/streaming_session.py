@@ -38,17 +38,8 @@ class StreamingSessionService:
         if streaming_session_created:
             logger.info(f"session: {streaming_session_created.id} - created")
 
-        #TODO разобраться со временем для токенов
-        payload = {
-            "user_id": streaming_session_create.user_id,
-            "streaming_session_id": str(streaming_session_created.id),
-            "exp": datetime.now() + timedelta(minutes=1000)
-        }
 
-
-        token = jwt.encode(payload, settings.SECRET_KEY, algorithm="HS256")
-
-        return StreamingSessionResponse(streaming_session_id=streaming_session_created.id, token=token)
+        return StreamingSessionResponse(streaming_session_id=streaming_session_created.id)
 
 
     async def read_session(self, streaming_session_id: uuid.UUID):

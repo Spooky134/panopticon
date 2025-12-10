@@ -1,5 +1,6 @@
 import os
 import uuid
+from uuid import UUID
 from datetime import datetime
 from datetime import datetime, timedelta, timezone
 
@@ -29,17 +30,15 @@ class StreamService:
         self.streaming_session_repository = streaming_session_repository
         self.streaming_video_repository = streaming_video_repository
 
-    async def offer(self, token, sdp_data: SDPData) -> dict:
-        payload = verify_token(token)
-        user_id = int(payload["user_id"])
-        streaming_session_id = payload["streaming_session_id"]
-
+    async def offer(self, streaming_session_id: UUID, sdp_data: SDPData) -> dict:
+        user_id = 1
         logger.info(f"session: {streaming_session_id} - Authorized user {user_id} starting stream")
 
         await self.streaming_session_manager.create_streaming_session(user_id=user_id,
                                                                       streaming_session_id=streaming_session_id,
                                                                       on_streaming_session_started=self._started_update,
                                                                       on_streaming_session_finished=self._finished_update)
+
 
         answer = await self.streaming_session_manager.start_streaming_session(streaming_session_id=streaming_session_id,
                                                                               sdp_data=sdp_data)
@@ -48,13 +47,13 @@ class StreamService:
 
 
 
-    async def _started_update(self, streaming_session_id: uuid.UUID, started_at: datetime):
+    async def _started_update(self, streaming_session_id: UUID, started_at: datetime):
         await self.streaming_session_repository.update(streaming_session_id=streaming_session_id,
                                                        data={"status": "running",
                                                              "started_at": started_at})
 
     async def _finished_update(self,
-                               streaming_session_id: uuid.UUID,
+                               streaming_session_id: UUID,
                                finished_at: datetime,
                                file_path: str,
                                file_name: str,
@@ -95,7 +94,7 @@ class StreamService:
                                                        data={"status": "finished",
                                                              "ended_at": finished_at})
 
-    async def _save_data_to_s3(self, streaming_session_id: uuid.UUID, file_path:str, object_name:str):
+    async def _save_data_to_s3(self, streaming_session_id: UUID, file_path:str, object_name:str):
         s3_key = None
         try:
             logger.info(f"session: {streaming_session_id} - Loading {file_path} → {object_name}")
