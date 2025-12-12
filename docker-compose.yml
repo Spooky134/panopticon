@@ -9,7 +9,7 @@ services:
       - "443:443" #https
     depends_on:
       - panopticon
-      - vstream_service
+      # - vstream_service
     volumes:
       # - panopticon_static:/var/www/static  # статика Django
       - ./gateway/nginx.conf:/etc/nginx/nginx.conf:ro
@@ -25,7 +25,6 @@ services:
     environment:
       - PANOPTICON_NAME=${PANOPTICON_NAME}
       - VSTREAM_INTERNAL_URL=${VSTREAM_INTERNAL_URL}
-      - VSTREAM_WEBRTC_URL=${VSTREAM_WEBRTC_URL}
       
       - TURN_URL=${TURN_URL}
       - TURN_USERNAME=${TURN_USERNAME}

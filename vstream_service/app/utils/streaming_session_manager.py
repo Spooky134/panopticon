@@ -81,8 +81,9 @@ class StreamingSessionManager:
 
     async def dispose_streaming_session(self, streaming_session_id: UUID):
         logger.info(f"session: {streaming_session_id} - cleaning up")
+        logger.info(f"{self.streaming_sessions.keys()}")
         session = self.streaming_sessions.pop(streaming_session_id, None)
-
+        logger.info(f"session: {streaming_session_id} - type:{type(session)}")
         video_file_path, video_file_name, video_meta = await session.finalize()
         try:
             await self._on_streaming_session_finished(streaming_session_id=streaming_session_id,

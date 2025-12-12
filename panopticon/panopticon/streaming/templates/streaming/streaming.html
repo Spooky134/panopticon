@@ -48,12 +48,11 @@
 {% block javascript %}
 <script>
   const CONFIG = {
-    vstreamServiceURL: "{{ vstream_service_url }}",
+    offerURL: "{{ offer_url }}",
+    stopURL: "{{ stop_url }}",
     turnURL: "{{ turn_url }}",
     turnUsername: "{{ turn_username }}",
-    turnPassword: "{{ turn_password }}",
-    authToken: "{{ auth_token }}",
-    apiSecretKey: "{{ api_secret_key }}",
+    turnPassword: "{{ turn_password }}"
   };
 
   // ... остальной JavaScript код без изменений ...
@@ -115,15 +114,18 @@
         const offer = await pc.createOffer();
         await pc.setLocalDescription(offer);
 
-        const SERVER_URL = CONFIG.vstreamServiceURL;
+        const csrftoken = getCookie("csrftoken");
+        const SERVER_URL = CONFIG.offerURL;
         const response = await fetch(SERVER_URL, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            "X-Api-Key": CONFIG.apiSecretKey
+            "X-CSRFToken": csrftoken
           },
           body: JSON.stringify({ sdp: offer.sdp, type: offer.type })
         });
+        
+        
 
         const answer = await response.json();
         await pc.setRemoteDescription(new RTCSessionDescription(answer));
@@ -139,23 +141,66 @@
       } finally {
         toggleButton.disabled = false;
       }
-    } else {
-      if (localStream) localStream.getTracks().forEach(t => t.stop());
-      if (pc) pc.close();
+    } 
+    else {
+        toggleButton.disabled = true;
+        toggleButton.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Stopping...';
 
-      localVideo.srcObject = null;
-      remoteVideo.srcObject = null;
-      localStatus.textContent = "Inactive";
-      remoteStatus.textContent = "Inactive";
-      localStatus.className = "badge bg-secondary";
-      remoteStatus.className = "badge bg-secondary";
-      connectionInfo.textContent = "Stream stopped";
+        try {
+          const csrftoken = getCookie("csrftoken");
+          response = await fetch(CONFIG.stopURL, {
+            method: "POST",
+            headers: {
+              "X-CSRFToken": csrftoken
+            }
+          });
 
-      isStreaming = false;
-      toggleButton.innerHTML = '<span class="status-indicator"></span> START STREAM';
-      toggleButton.className = "btn btn-primary btn-lg";
-      statusIndicator.classList.remove("status-active");
-    }
+          if (!response.ok) {
+            throw new Error(`Server responded with status: ${response.status}`);
+          }
+
+          if (pc) {
+            pc.close();
+          }
+
+          if (localStream) {
+            localStream.getTracks().forEach(track => track.stop());
+          }
+
+          localVideo.srcObject = null;
+          remoteVideo.srcObject = null;
+          localStatus.textContent = "Inactive";
+          remoteStatus.textContent = "Inactive";
+          localStatus.className = "badge bg-secondary";
+          remoteStatus.className = "badge bg-secondary";
+          connectionInfo.textContent = "Stream stopped";
+
+          isStreaming = false;
+          toggleButton.innerHTML = '<span class="status-indicator"></span> START STREAM';
+          toggleButton.className = "btn btn-primary btn-lg";
+          statusIndicator.classList.remove("status-active");
+        } 
+        catch (e) {
+          console.error("Stop request failed:", e);
+          connectionInfo.textContent = `Stop error: ${e.message}`;
+        }
+        finally {
+          // 5. Всегда очищаем UI и разблокируем кнопку
+          localVideo.srcObject = null;
+          remoteVideo.srcObject = null;
+          localStatus.textContent = "Inactive";
+          remoteStatus.textContent = "Inactive";
+          localStatus.className = "badge bg-secondary";
+          remoteStatus.className = "badge bg-secondary";
+          connectionInfo.textContent = "Stream stopped";
+
+          isStreaming = false;
+          toggleButton.innerHTML = '<span class="status-indicator"></span> START STREAM';
+          toggleButton.className = "btn btn-primary btn-lg";
+          statusIndicator.classList.remove("status-active");
+          toggleButton.disabled = false;  // ← Важно: разблокируем кнопку
+        }
+      }
   };
 
   let lastOutbound = { bytesSent: 0, timestamp: 0 };
@@ -207,6 +252,20 @@
     connectionInfo.textContent = `End-to-end latency ≈ ${rtt.toFixed(1)} ms`;
 
     setTimeout(monitorStats, 1000);
+  }
+  function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
   }
 </script>
 {% endblock %}

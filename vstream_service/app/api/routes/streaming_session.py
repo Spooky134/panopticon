@@ -13,7 +13,7 @@ logger = get_logger(__name__)
 router = APIRouter(prefix="/sessions", tags=["sessions"])
 
 
-@router.post("/", response_model=StreamingSessionResponse, status_code=status.HTTP_201_CREATED, dependencies=[Depends(get_api_key)])
+@router.post("", response_model=StreamingSessionResponse, status_code=status.HTTP_201_CREATED, dependencies=[Depends(get_api_key)])
 async def create_session(streaming_session_create: StreamingSessionCreate,
                          streaming_session_service: StreamingSessionService = Depends(get_streaming_session_service)):
 

@@ -17,14 +17,10 @@ import environ
 env = environ.Env()
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# Пытаемся прочитать .env, но если его нет - ок
 env.read_env(BASE_DIR / '.env')
 
 VSTREAM_INTERNAL_URL = env("VSTREAM_INTERNAL_URL")
-VSTREAM_WEBRTC_URL = env("VSTREAM_WEBRTC_URL")
 
-
-# TURN server configuration (опционально)
 TURN_URL = env('TURN_URL')
 TURN_USERNAME = env('TURN_USERNAME')
 TURN_PASSWORD = env('TURN_PASSWORD')

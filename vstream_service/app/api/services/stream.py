@@ -45,7 +45,20 @@ class StreamService:
 
         return answer
 
-
+    async def stop(self, streaming_session_id: UUID) -> dict:
+        logger.info(f"session: {streaming_session_id} - type{type(streaming_session_id)}")
+        try:
+            await self.streaming_session_manager.dispose_streaming_session(streaming_session_id=streaming_session_id)
+        except Exception as e:
+            logger.error(f"streaming_session: {streaming_session_id} - stop error:{e}")
+            return {
+                "status": "error",
+                "message": str(e)
+            }
+        return {
+            "status": "success",
+            "message": f"Stream session {streaming_session_id} stopped"
+        }
 
     async def _started_update(self, streaming_session_id: UUID, started_at: datetime):
         await self.streaming_session_repository.update(streaming_session_id=streaming_session_id,
