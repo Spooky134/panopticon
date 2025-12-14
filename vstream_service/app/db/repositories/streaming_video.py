@@ -5,6 +5,7 @@ from sqlalchemy import exists, select, update, delete
 from sqlalchemy.orm import selectinload, joinedload
 from db.models import StreamingVideo, StreamingSession
 from core.logger import get_logger
+from schemas.streaming_video import StreamingVideoORMCreate, VideoMeta
 import uuid
 
 
@@ -21,10 +22,12 @@ class StreamingVideoRepository:
             where(StreamingVideo.id == streaming_video_id))
         return streaming_video.scalar_one_or_none()
 
-    async def create(self, data: dict) -> StreamingVideo:
-        new_streaming_video = StreamingVideo(**data)
-        self.db.add(new_streaming_video)
+    async def create(self, new_streaming_video: StreamingVideoORMCreate) -> StreamingVideo:
+        data_dict = new_streaming_video.model_dump()
+        streaming_video = StreamingVideo(**data_dict)
+
+        self.db.add(streaming_video)
         await self.db.commit()
         # await self.db.refresh(new_streaming_video)
 
-        return await self.get(new_streaming_video.id)
+        return await self.get(streaming_video.id)

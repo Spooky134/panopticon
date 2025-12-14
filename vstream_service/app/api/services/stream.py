@@ -13,7 +13,7 @@ from storage.s3_storage import S3Storage
 from db.repositories import StreamingSessionRepository, StreamingVideoRepository
 from core.logger import get_logger
 from utils.streaming_session import StreamingSession
-
+from schemas.streaming_video import StreamingVideoORMCreate, VideoMeta
 
 logger = get_logger(__name__)
 
@@ -88,20 +88,21 @@ class StreamService:
                                                                                  "width",
                                                                                  "height",
                                                                                  "fps",]}
+        new_streaming_video = StreamingVideoORMCreate(
+            streaming_session_id=streaming_session_id,
+            s3_key=s3_key,
+            s3_bucket=self.s3_storage.bucket_name,
+            created_at=datetime.now(timezone.utc),
+            duration=video_meta.get("duration", None),
+            fps=video_meta.get("fps", None),
+            file_size=video_meta.get("file_size", None),
+            mime_type=video_meta.get("mime_type", None),
+            width=video_meta.get("width", None),
+            height=video_meta.get("height", None),
+            meta=VideoMeta(**meta)
+        )
 
-        data = {"streaming_session_id": streaming_session_id,
-                "s3_key": s3_key,
-                "s3_bucket": self.s3_storage.bucket_name,
-                "duration": video_meta.get("duration", None),
-                "fps": video_meta.get("fps", None),
-                "file_size": video_meta.get("file_size", None),
-                "mime_type": video_meta.get("mime_type", None),
-                "width": video_meta.get("width", None),
-                "height": video_meta.get("height", None),
-                "meta": meta,
-                "created_at": datetime.now(timezone.utc)}
-
-        await self.streaming_video_repository.create(data=data)
+        await self.streaming_video_repository.create(new_streaming_video=new_streaming_video)
 
         await self.streaming_session_repository.update(streaming_session_id=streaming_session_id,
                                                        data={"status": "finished",

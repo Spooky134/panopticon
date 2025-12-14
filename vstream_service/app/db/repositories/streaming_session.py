@@ -6,6 +6,7 @@ from sqlalchemy.orm import selectinload, joinedload
 from db.models import StreamingSession
 from core.logger import get_logger
 from uuid import UUID
+from schemas.streaming_session import StreamingSessionORMCreate
 
 
 logger = get_logger(__name__)
@@ -22,8 +23,10 @@ class StreamingSessionRepository:
         return result.scalar_one_or_none()
 
     # TODO поменять на схему session_data
-    async def create(self, streaming_session_data: dict) -> Optional[StreamingSession]:
-        new_streaming_session = StreamingSession(**streaming_session_data)
+    async def create(self, streaming_session_data: StreamingSessionORMCreate) -> Optional[StreamingSession]:
+        data_dict = streaming_session_data.model_dump()
+        new_streaming_session = StreamingSession(**data_dict)
+
         self.db.add(new_streaming_session)
         await self.db.commit()
 

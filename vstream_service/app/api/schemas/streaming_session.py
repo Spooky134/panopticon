@@ -8,5 +8,5 @@ class StreamingSessionResponseInfo(BaseModel):
 class StreamingSessionResponse(BaseModel):
     streaming_session_id: UUID
 
-class StreamingSessionCreate(BaseModel):
+class StreamingSessionCreateRequest(BaseModel):
     user_id: int
