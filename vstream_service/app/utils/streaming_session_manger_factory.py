@@ -15,8 +15,10 @@ def get_streaming_session_manager(connection_manager: ConnectionManager = Depend
                                   collector_factory: FrameCollectorFactory = Depends(FrameCollectorFactory),
                                   ice_servers: list = Depends(lambda: settings.ice_servers)
                                   ) -> StreamingSessionManager:
-    return StreamingSessionManager(connection_manager=connection_manager,
-                                   processor_manager=processor_manager,
-                                   collector_factory=collector_factory,
-                                   ice_servers=ice_servers)
+    if not hasattr(get_streaming_session_manager, 'instance'):
+        get_streaming_session_manager.instance = StreamingSessionManager(connection_manager=connection_manager,
+                                                                         processor_manager=processor_manager,
+                                                                         collector_factory=collector_factory,
+                                                                         ice_servers=ice_servers)
+    return get_streaming_session_manager.instance
 

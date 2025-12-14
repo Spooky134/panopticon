@@ -110,12 +110,12 @@ class StreamService:
     async def _save_data_to_s3(self, streaming_session_id: UUID, file_path:str, object_name:str):
         s3_key = None
         try:
-            logger.info(f"session: {streaming_session_id} - Loading {file_path} → {object_name}")
+            logger.info(f"session: {streaming_session_id} - loading {file_path} → {object_name}")
             s3_key = await self.s3_storage.upload_multipart(file_path=file_path, object_name=object_name)
             #TODO говорит все успешно хотя загрузки небыло
-            logger.info(f"session: {streaming_session_id} - The video has been successfully uploaded to S3: {object_name}")
+            logger.info(f"session: {streaming_session_id} - the video has been successfully uploaded to S3: {object_name}")
         except Exception as e:
-            logger.error(f"session: {streaming_session_id} - Error loading in: {e}")
+            logger.error(f"session: {streaming_session_id} - error loading in: {e}")
 
 
         return s3_key

@@ -36,6 +36,7 @@ class StreamingSessionManager:
         self._on_streaming_session_started = None
         self._on_streaming_session_finished = None
 
+
     async def create_streaming_session(self, user_id:int,
                                        streaming_session_id: UUID,
                                        on_streaming_session_started=None,

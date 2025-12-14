@@ -3,6 +3,7 @@ from fastapi import FastAPI
 from core.s3_client import get_s3_client, s3_client_instance
 from core.database import Base, engine
 
+#TODO просмотреть
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # --- startup: создаём клиент сразу ---

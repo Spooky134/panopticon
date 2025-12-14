@@ -85,7 +85,6 @@ class WebRTCOfferView(View):
 
 class WebRTCStopView(View):
     def post(self, request, streaming_session_id):
-        print("--------------STOP-----------")
         try:
             vstream_service_stop = f"{settings.VSTREAM_INTERNAL_URL}/stream/{streaming_session_id}/stop"
 
