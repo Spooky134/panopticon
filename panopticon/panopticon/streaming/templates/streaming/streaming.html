@@ -148,17 +148,17 @@
 
         
         try {
-          {% comment %} const csrftoken = getCookie("csrftoken");
-          response = await fetch(CONFIG.stopURL, {
-            method: "POST",
-            headers: {
-              "X-CSRFToken": csrftoken
-            }
-          });
-
-          if (!response.ok) {
-            throw new Error(`Server responded with status: ${response.status}`);
-          } {% endcomment %}
+          // const csrftoken = getCookie("csrftoken");
+          // response = await fetch(CONFIG.stopURL, {
+          //   method: "POST",
+          //   headers: {
+          //     "X-CSRFToken": csrftoken
+          //   }
+          // });
+          //
+          // if (!response.ok) {
+          //   throw new Error(`Server responded with status: ${response.status}`);
+          // }
 
           if (pc) {
             pc.close();

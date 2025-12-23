@@ -36,7 +36,7 @@ services:
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
     volumes:
-      # - ./panopticon/panopticon:/app
+      - ./panopticon/panopticon:/app
       - panopticon_static:/app/staticfiles
     depends_on:
       - database
@@ -45,7 +45,7 @@ services:
     command: |
          sh -c "python manage.py collectstatic --noinput &&
          python manage.py migrate &&
-         python manage.py runserver 0.0.0.0:${PANOPTICON_PORT}"
+         python manage.py runserver 0.0.0.0:${PANOPTICON_PORT}" --reload
     networks:
       - mainnet
     restart: unless-stopped
