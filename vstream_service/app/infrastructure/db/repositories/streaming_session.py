@@ -1,9 +1,8 @@
-from datetime import datetime, timezone
 from typing import Optional
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import exists, select, update, delete
-from sqlalchemy.orm import selectinload, joinedload
-from db.models import StreamingSession
+from sqlalchemy import select
+from sqlalchemy.orm import joinedload
+from infrastructure.db.models import StreamingSession
 from core.logger import get_logger
 from uuid import UUID
 from schemas.streaming_session import StreamingSessionORMCreate

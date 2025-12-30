@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 
 from api.routes import streaming_session
-from api.routes import stream
+from api.routes import streaming_runtime
 from config.settings import settings
 from core.lifespan import lifespan
 from config.logging import setup_logging
@@ -23,7 +23,7 @@ app.add_middleware(
 api_v1_router = APIRouter(prefix="/v1", tags=["v1"])
 
 api_v1_router.include_router(streaming_session.router, tags=["streaming_sessions"])
-api_v1_router.include_router(stream.router, tags=["stream"])
+api_v1_router.include_router(streaming_runtime.router, tags=["stream"])
 
 app.include_router(api_v1_router, prefix="/api")
 

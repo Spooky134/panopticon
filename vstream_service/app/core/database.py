@@ -9,12 +9,10 @@ DB_URL = (
     f"@{settings.POSTGRES_HOST}:{settings.POSTGRES_PORT}/{settings.POSTGRES_DB}"
 )
 
-# Движок с настройками
 engine = create_async_engine(
     DB_URL
 )
 
-# Фабрика асинхронных сессий
 AsyncSessionLocal = async_sessionmaker(
     bind=engine,
     autocommit=False,
@@ -24,7 +22,7 @@ AsyncSessionLocal = async_sessionmaker(
 
 Base = declarative_base()
 
-# Зависимость для FastAPI
+
 async def get_db() -> AsyncGenerator[AsyncSession, None]:
     async with AsyncSessionLocal() as db:  # Автоматически закроется при выходе
         yield db

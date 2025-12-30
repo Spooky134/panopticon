@@ -1,13 +1,12 @@
-# dependencies/s3_client.py
 from typing import AsyncGenerator
 from fastapi import Depends
 from config.settings import settings
-from storage.s3_storage import S3Storage
+from infrastructure.s3.s3_service import S3Service
 from core.s3_client import get_s3_client
 
 
-async def get_s3_storage(s3_client=Depends(get_s3_client)) -> AsyncGenerator[S3Storage, None]:
-    storage = S3Storage(
+async def get_s3_service(s3_client=Depends(get_s3_client)) -> AsyncGenerator[S3Service, None]:
+    storage = S3Service(
         s3_client=s3_client,
         bucket_name=settings.S3_BUCKET_NAME
     )

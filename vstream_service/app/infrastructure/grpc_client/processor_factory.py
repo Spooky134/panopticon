@@ -1,5 +1,5 @@
 from uuid import UUID
-from grpc_client.video_processor import VideoProcessor
+from infrastructure.grpc_client.video_processor import VideoProcessor
 
 
 class VideoProcessorFactory:

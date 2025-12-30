@@ -6,7 +6,7 @@ from core.logger import get_logger
 logger = get_logger(__name__)
 
 
-class S3Storage:
+class S3Service:
     def __init__(self, s3_client, bucket_name: str, prefix="videos"):
         self.client = s3_client
         self.bucket_name = bucket_name

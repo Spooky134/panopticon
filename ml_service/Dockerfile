@@ -31,7 +31,6 @@ COPY ml_service/requirements.txt .
 
 # Устанавливаем Python зависимости
 RUN pip install --no-cache-dir -r requirements.txt
-RUN pip install dlib --no-cache-dir
 
 # Копируем исходный код
 COPY ml_service/app/ .

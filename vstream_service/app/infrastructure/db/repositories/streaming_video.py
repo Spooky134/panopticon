@@ -1,11 +1,10 @@
-from datetime import datetime
 from typing import Optional
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import exists, select, update, delete
-from sqlalchemy.orm import selectinload, joinedload
-from db.models import StreamingVideo, StreamingSession
+from sqlalchemy import select
+from sqlalchemy.orm import joinedload
+from infrastructure.db.models import StreamingVideo
 from core.logger import get_logger
-from schemas.streaming_video import StreamingVideoORMCreate, VideoMeta
+from schemas.streaming_video import StreamingVideoORMCreate
 import uuid
 
 

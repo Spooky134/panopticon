@@ -2,18 +2,27 @@ from uuid import UUID
 
 from api.schemas.sdp import SDPData
 from utils.frame_collector_factory import FrameCollectorFactory
-from utils.streaming_session import StreamingSession
-from grpc_client.processor_factory import VideoProcessorFactory
+from core.engine.live_streaming_session import LiveStreamingSession
+from infrastructure.grpc_client.processor_factory import VideoProcessorFactory
 
 from core.logger import get_logger
 
-from webrtc.connection_factory import ConnectionFactory
+from infrastructure.webrtc.get_connection_factory import ConnectionFactory
 
 logger = get_logger(__name__)
 
 
 
-class StreamingSessionManager:
+class LiveStreamingSessionManager:
+    _instance = None
+
+    @classmethod
+    def get_instance(cls, **kwargs) -> "LiveStreamingSessionManager":
+        if cls._instance is None:
+            cls._instance = cls(**kwargs)
+        return cls._instance
+
+
     def __init__(self,
                  connection_factory: ConnectionFactory,
                  processor_factory: VideoProcessorFactory,
@@ -26,7 +35,7 @@ class StreamingSessionManager:
         self._processor_factory = processor_factory
         self._connection_factory = connection_factory
 
-        self._streaming_sessions: dict[UUID, StreamingSession] = {}
+        self._streaming_sessions: dict[UUID, LiveStreamingSession] = {}
 
         self._on_streaming_session_started = None
         self._on_streaming_session_finished = None
@@ -49,7 +58,7 @@ class StreamingSessionManager:
         # collector = self.collector_factory.create(session_id=streaming_session_id)
         collector = None
 
-        session = StreamingSession(
+        session = LiveStreamingSession(
             user_id=user_id,
             session_id=streaming_session_id,
             peer_connection = peer_connection,
@@ -63,7 +72,7 @@ class StreamingSessionManager:
         return streaming_session_id
 
     async def start_streaming_session(self, streaming_session_id: UUID, sdp_data: SDPData) -> dict:
-        session: StreamingSession = await self.get_streaming_session(streaming_session_id)
+        session: LiveStreamingSession = await self.get_streaming_session(streaming_session_id)
         if session is None:
             raise ValueError("session not found")
 
@@ -93,7 +102,7 @@ class StreamingSessionManager:
 
 
 
-    async def get_streaming_session(self, streaming_session_id: UUID) -> StreamingSession:
+    async def get_streaming_session(self, streaming_session_id: UUID) -> LiveStreamingSession:
         return self._streaming_sessions.get(streaming_session_id, None)
 
     async def dispose_all_sessions(self):

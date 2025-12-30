@@ -1,41 +1,42 @@
 import asyncio
 from datetime import datetime, timezone
+from typing import Callable, Awaitable
+
 from aiortc import RTCSessionDescription, RTCPeerConnection
 from uuid import UUID
 
 from api.schemas.sdp import SDPData
 from core.logger import get_logger
 from utils.frame_collector import FrameCollector
-from grpc_client.video_processor import VideoProcessor
-from webrtc.video_transform_track import VideoTransformTrack
+from infrastructure.grpc_client.video_processor import VideoProcessor
+from infrastructure.webrtc.video_transform_track import VideoTransformTrack
 
 
 logger = get_logger(__name__)
 
 
-class StreamingSession:
+class LiveStreamingSession:
     def __init__(self,
                  session_id: UUID,
                  user_id: int,
-                 on_disconnect,
                  peer_connection: RTCPeerConnection,
                  grpc_processor: VideoProcessor,
-                 collector: FrameCollector=None,
+                 collector: FrameCollector,
+                 on_disconnect: Callable[[UUID], Awaitable[None]],
                  ):
+
         self._id = session_id
         self._user_id = user_id
-
-        self._on_disconnect = on_disconnect
-
         self._peer_connection = peer_connection
-        self._peer_connection.on("track", self._on_track)
-        self._peer_connection.on("iceconnectionstatechange", self._on_ice_state_change)
-
         self._grpc_processor = grpc_processor
         self._collector = collector
+        self._on_disconnect = on_disconnect
 
-        self._started_at = None
-        self._finished_at = None
+        self._started_at: datetime | None = None
+        self._finished_at: datetime | None = None
+
+        self._peer_connection.on("track", self._on_track)
+        self._peer_connection.on("iceconnectionstatechange", self._on_ice_state_change)
 
 
     @property
@@ -58,7 +59,7 @@ class StreamingSession:
         logger.info(f"session: {self._id} - ICE state → {state}")
 
         if state in ["failed", "closed", "disconnected"]:
-            logger.info(f"session: {self._id} - ICE state → {state}")
+            # logger.info(f"session: {self._id} - ICE state → {state}")
             await self._on_disconnect(self._id)
 
 

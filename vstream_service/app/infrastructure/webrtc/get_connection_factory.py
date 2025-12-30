@@ -1,5 +1,5 @@
 from config import settings
-from webrtc.connection_factory import ConnectionFactory
+from infrastructure.webrtc.connection_factory import ConnectionFactory
 
 
 def get_connection_factory() -> ConnectionFactory:
