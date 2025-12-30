@@ -10,28 +10,39 @@ class MLServiceServicer(ml_worker_pb2_grpc.MLServiceServicer):
         pass
     
     async def StreamFrames(self, request_iterator, context):
-        try:
-            async for request in request_iterator:
-                nparr = np.frombuffer(request.image, np.uint8)
-                frame = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-                
-                if frame is None:
-                    print(f"session: {request.session_id} - error of decoding frame")
-                    continue
+        async for request in request_iterator:
+            try:
+                w, h, c = request.width, request.height, request.channels
+                frame = np.frombuffer(request.frame_data, dtype=np.uint8)
+                frame = frame.reshape((h, w, c)).copy()
 
+                # faces = detect_faces_dlib_cnn(frame, upsample=1)
+                #
+                # # Рисуем рамки
+                # for (x, y, w, h) in faces:
+                #     cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
+                cv2.rectangle(frame, (50, 50), (200, 200), (0, 255, 0), 2)
                 gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
                 processed_frame = cv2.cvtColor(gray, cv2.COLOR_GRAY2BGR)
+                # processed_frame = frame
 
-                _, jpeg_bytes = cv2.imencode(".jpg", processed_frame)
+                # processed_frame = detect_faces_simple(frame)
+
+                session_id = request.session_id
 
                 yield ml_worker_pb2.FrameResponse(
-                    processed_image=jpeg_bytes.tobytes(),
-                    comment=f"session: {request.session_id} - frame is processed",
+                    session_id=session_id,
+                    processed_frame_data=processed_frame.tobytes(),
+                    width=w,
+                    height=h,
+                    channels=c,
+                    comment=f"session: {session_id} - frame is processed",
                     ts=request.ts,
                 )
-                
-        except Exception as e:
-            print(f"error in stream: {e}")
+            except Exception as e:
+                print(f"error processing frame: {e}")
+
+
 
 async def serve():
     # server = grpc.aio.server(futures.ThreadPoolExecutor(max_workers=10))

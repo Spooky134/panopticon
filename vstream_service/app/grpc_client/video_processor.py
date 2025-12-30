@@ -1,82 +1,90 @@
-import time
-
 import av
 import cv2
 import numpy as np
 import asyncio
 import grpc
+import time
 from uuid import UUID
-import zlib
 
 import ml_worker_pb2
 import ml_worker_pb2_grpc
-from config.settings import settings
-from grpc_client.base_processor import BaseProcessor
 from core.logger import get_logger
 
 
 logger = get_logger(__name__)
 
 #TODO если возвращать UUID в ответе то нужно привести к UUID
-class VideoProcessor(BaseProcessor):
-    def __init__(self, session_id: UUID):
-        super().__init__(session_id)
-        self.channel = grpc.aio.insecure_channel(settings.ML_SERVICE_URL)
+class VideoProcessor:
+    def __init__(self, service_url: str, session_id: UUID):
+        self.session_id = str(session_id)
+        self.channel = grpc.aio.insecure_channel(service_url)
         self.stub = ml_worker_pb2_grpc.MLServiceStub(self.channel)
-        self.request_queue = asyncio.Queue(150)
-        self.response_queue = asyncio.Queue(150)
+
+        self.request_queue = asyncio.Queue(maxsize=1)
+        self.latest_processed_frame: av.VideoFrame = None
+
         self.processing_task = None
+        self.receiving_task = None
+
 
     async def start(self):
-        self.processing_task = asyncio.create_task(self._process_stream())
+        self.processing_task = asyncio.create_task(self._stream_loop())
 
     async def stop(self):
         if self.processing_task:
             self.processing_task.cancel()
-            try:
-                await self.processing_task
-            except asyncio.CancelledError:
-                pass
         await self.channel.close()
 
-# TODO может не преобразовывать кадры при передаче в jpg??
-    async def process_frame(self, frame, ts) -> tuple[av.VideoFrame, int]:
+
+    async def process_frame(self, frame: av.VideoFrame) -> av.VideoFrame:
         img = frame.to_ndarray(format="bgr24")
-        _, jpeg_bytes = cv2.imencode(".jpg", img)
 
-        # logger.info(f"session: {self.session_id} - grpc request queue= {self.request_queue.qsize()}")
-        # logger.info(f"session: {self.session_id} - grpc response queue= {self.response_queue.qsize()}")
+        scale_width, scale_height = 640, 480
+        small_img = cv2.resize(img, (scale_width, scale_height))
+
+        if not self.request_queue.full():
+            frame_bytes = small_img.tobytes()
+            req = ml_worker_pb2.FrameRequest(
+                session_id=self.session_id,
+                frame_data=frame_bytes,
+                width=scale_width,
+                height=scale_height,
+                channels=3,
+                ts=int(time.time() * 1000),
+            )
+            self.request_queue.put_nowait(req)
+        else:
+            # дроп кадров
+            # TODO логирование
+            pass
+
+        if self.latest_processed_frame is not None:
+            self.latest_processed_frame.pts = frame.pts
+            self.latest_processed_frame.time_base = frame.time_base
+            return self.latest_processed_frame
+
+        return frame
+
+    async def _stream_loop(self):
+        async def request_generator():
+            while True:
+                req = await self.request_queue.get()
+                yield req
 
 
-        await self.request_queue.put({"jpeg": jpeg_bytes.tobytes(),
-                                      "ts":ts})
-        response = await self.response_queue.get()
-
-        nparr = np.frombuffer(response.processed_image, np.uint8)
-        processed_img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-
-        new_frame = av.VideoFrame.from_ndarray(processed_img, format="bgr24")
-        new_frame.pts = frame.pts
-        new_frame.time_base = frame.time_base
-        return new_frame, response.ts
-
-    async def _process_stream(self):
         try:
-            async def request_generator():
-                while True:
-                    frame_data = await self.request_queue.get()
-                    yield ml_worker_pb2.FrameRequest(
-                        session_id=str(self.session_id),
-                        image=frame_data["jpeg"],
-                        ts=frame_data["ts"]
-                    )
-
             async for response in self.stub.StreamFrames(request_generator()):
-                await self.response_queue.put(response)
+                w, h, c = response.width, response.height, response.channels
+                nparr = np.frombuffer(response.processed_frame_data, dtype=np.uint8)
+                processed_img = nparr.reshape((h, w, c))
+                # TODO
+                # Если мы ресайзили ПЕРЕД отправкой, тут может потребоваться
+                # апскейл обратно (но качество потеряется), либо просто рисуем маленький кадр.
+                # Для прокторинга обычно возвращают координаты, и рисуют на оригинале.
 
+                new_frame = av.VideoFrame.from_ndarray(processed_img, format="bgr24")
+                self.latest_processed_frame = new_frame
         except asyncio.CancelledError:
-            logger.info(f"session: {self.session_id} - gRPC stream is stopped")
+            pass
         except Exception as e:
             logger.error(f"session:{self.session_id} - error in gRPC stream: {e}")
-
-

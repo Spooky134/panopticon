@@ -2,21 +2,29 @@ syntax = "proto3";
 
 package vstream_ml_model.ml_worker;
 
-// Запрос с кадром
+
 message FrameRequest {
   string session_id = 1;
-  bytes image = 2; // JPEG кадр
-  int64 ts = 3; 
+  bytes frame_data = 2; //данные изображения
+  int32 width = 3;
+  int32 height = 4;
+  int32 channels = 5; //три канала для rgb
+  int64 ts = 6;  //временная метка
 }
 
-// Ответ после обработки
+
 message FrameResponse {
-  bytes processed_image = 1; // JPEG кадр
-  string comment = 2; 
-  int64 ts = 3;        // комментарий
+  string session_id = 1;
+  bytes processed_frame_data = 2;
+  int32 width = 3;
+  int32 height = 4;
+  int32 channels = 5;
+  string comment = 6;
+  int64 ts = 7;
 }
 
-// gRPC сервис с потоковой обработкой
+// обработка стриминг
 service MLService {
   rpc StreamFrames(stream FrameRequest) returns (stream FrameResponse);
 }
+

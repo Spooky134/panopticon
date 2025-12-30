@@ -19,6 +19,11 @@ RUN apt-get update && \
     libv4l-dev \
     libxv-dev \
     libx264-dev \
+    build-essential cmake \
+    libopenblas-dev \
+    liblapack-dev \
+    libx11-dev \
+    libgtk-3-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # Копируем requirements первыми для лучшего кэширования
@@ -26,6 +31,7 @@ COPY ml_service/requirements.txt .
 
 # Устанавливаем Python зависимости
 RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install dlib --no-cache-dir
 
 # Копируем исходный код
 COPY ml_service/app/ .

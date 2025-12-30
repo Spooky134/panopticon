@@ -2,13 +2,11 @@ import asyncio
 from datetime import datetime, timezone
 from aiortc import RTCSessionDescription, RTCPeerConnection
 from uuid import UUID
-from aiortc import RTCConfiguration
 
-from grpc_client.base_processor import BaseProcessor
-from utils.base_frame_collector import BaseFrameCollector
 from api.schemas.sdp import SDPData
 from core.logger import get_logger
 from utils.frame_collector import FrameCollector
+from grpc_client.video_processor import VideoProcessor
 from webrtc.video_transform_track import VideoTransformTrack
 
 
@@ -19,15 +17,13 @@ class StreamingSession:
     def __init__(self,
                  session_id: UUID,
                  user_id: int,
-                 ice_config,
                  on_disconnect,
-                 peer_connection=None,
-                 grpc_processor=None,
-                 collector=None,
+                 peer_connection: RTCPeerConnection,
+                 grpc_processor: VideoProcessor,
+                 collector: FrameCollector=None,
                  ):
         self._id = session_id
         self._user_id = user_id
-        self._ice_config = ice_config
 
         self._on_disconnect = on_disconnect
 
@@ -74,6 +70,9 @@ class StreamingSession:
 
 
     async def start(self, sdp_data: SDPData):
+        logger.info(f"session: {self._id} - starting...")
+        await self._grpc_processor.start()
+
         offer = RTCSessionDescription(sdp_data.sdp, sdp_data.type)
         await self._peer_connection.setRemoteDescription(offer)
 
@@ -82,7 +81,7 @@ class StreamingSession:
         await self._peer_connection.setLocalDescription(answer)
 
         self._started_at = datetime.now(timezone.utc)
-        logger.info(f"session: {self._id} - Started for user {self._user_id}")
+        logger.info(f"session: {self._id} - started for user {self._user_id}")
 
         #TODO заменить на схему
         return {
@@ -108,10 +107,18 @@ class StreamingSession:
 
     async def shutdown(self):
         logger.info(f"session: {self._id} - cleaning up")
-        try:
+
+        if self._peer_connection:
+            await self._peer_connection.close()
+            logger.info(f"peer_connection: {self._id} - is closed")
+
+        if self._grpc_processor:
+            await self._grpc_processor.stop()
+            logger.info(f"session: {self._id} - processor stopped")
+
+        if self._collector:
             await self._collector.cleanup()
             logger.info(f"session: {self._id} - collector cleaned up")
-        except Exception as e:
-            logger.error(f"session: {self._id} - cleanup error: {e}")
+
 
         logger.info(f"session: {self._id} - shutdown complete")

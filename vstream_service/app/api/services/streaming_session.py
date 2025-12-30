@@ -36,7 +36,7 @@ class StreamingSessionService:
 
         streaming_session_created = await self.streaming_session_repository.create(streaming_session_data=new_streaming_session)
         if streaming_session_created:
-            logger.info(f"session: {streaming_session_created.id} - created :))))))))))")
+            logger.info(f"session: {streaming_session_created.id} - created.")
 
 
         return StreamingSessionResponse(streaming_session_id=streaming_session_created.id)
