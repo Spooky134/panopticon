@@ -55,8 +55,8 @@ class LiveStreamingSessionManager:
 
         grpc_processor = self._processor_factory.create(streaming_session_id=streaming_session_id)
 
-        # collector = self.collector_factory.create(session_id=streaming_session_id)
-        collector = None
+        collector = self._collector_factory.create(session_id=streaming_session_id)
+        # collector = None
 
         session = LiveStreamingSession(
             user_id=user_id,

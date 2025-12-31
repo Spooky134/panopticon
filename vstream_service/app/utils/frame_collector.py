@@ -38,14 +38,14 @@ class FrameCollector:
 
         self._running = True
 
-        # self._worker_thread = threading.Thread(target=self._recording_worker, daemon=True)
-        # self._worker_thread.start()
+        self._worker_thread = threading.Thread(target=self._recording_worker, daemon=True)
+        self._worker_thread.start()
 
         self._metadata = None
 
         self._container = None
         self._stream = None
-        self._frame_index = None
+        self._frame_index = 0
 
 
     @property
@@ -63,32 +63,27 @@ class FrameCollector:
         if not self._running:
             return
         try:
-
+            # frame_copy = frame.reformat(format=frame.format)
             self._queue.put_nowait(frame)
         except queue.Full:
-            logger.warning(f"session: {self._session_id} - Drop recording frame (Queue full)")
+            logger.warning(f"session: {self._session_id} - drop recording frame (queue full)")
         except Exception as e:
             logger.error(f"session: {self._session_id} - error queuing frame: {e}")
 
-    async def _recording_worker(self):
-        logger.info(f"session: {self._session_id} - Recording thread started")
+    def _recording_worker(self):
+        logger.info(f"session: {self._session_id} - recording thread started")
 
         try:
             self._container = av.open(self._output_file_path, mode="w")
         except Exception as e:
-            logger.error(f"session: {self._session_id} - Failed to open file: {e}")
+            logger.error(f"session: {self._session_id} - failed to open file: {e}")
             return
-
-        frame_count = 0
 
         while self._running or not self._queue.empty():
             try:
                 frame = self._queue.get(timeout=0.5)
             except queue.Empty:
                 continue
-
-            if frame is None:
-                break
 
             try:
                 if self._stream is None:
@@ -99,51 +94,48 @@ class FrameCollector:
                     self._stream.bit_rate = self.BIT_RATE
                     self._stream.options = self.OPTIONS
 
-                frame.pts = frame_count
+                frame.pts = self._frame_index
                 frame.time_base = Fraction(1, self.FPS)
-                frame_count += 1
+                self._frame_index += 1
 
                 for packet in self._stream.encode(frame):
                     self._container.mux(packet)
 
             except Exception as e:
-                logger.error(f"session: {self._session_id} - Encode error: {e}")
+                logger.error(f"session: {self._session_id} - encode error: {e}")
             finally:
                 self._queue.task_done()
 
-        try:
-            if self._stream:
+        if self._stream is not None:
+            try:
                 for packet in self._stream.encode():
                     self._container.mux(packet)
+            except Exception as e:
+                logger.error(f"session: {self._session_id} - final encode error: {e}")
+
+        if self._container is not None:
             self._container.close()
-            logger.info(f"session: {self._session_id} - Recording finished. Frames: {frame_count}")
+            logger.info(f"session: {self._session_id} - container closed")
+
+    async def finalize(self):
+        logger.info(f"session: {self._session_id} - finalizing video data to {self._output_file_path}")
+
+        self._running = False
+
+        if self._worker_thread.is_alive():
+            self._worker_thread.join(timeout=5.0)
+            logger.info(f"session: {self._session_id} - recording thread stopped")
+
+        try:
+            logger.info(f"session: {self._session_id} - getting metadata...")
+            self._metadata = await self.get_metadata()
         except Exception as e:
-            logger.error(f"session: {self._session_id} - Finalize error: {e}")
+            logger.error(f"session: {self._session_id} - error getting metadata: {e}")
+            self._metadata = None
+
+        return self._output_file_path, self._file_name, self._metadata
 
 
-
-
-    #     async with self._lock:
-    #         try:
-    #             if self._stream is None:
-    #                 self._stream = self._container.add_stream(self.CODEC, rate=self.FPS, options=self.OPTIONS)
-    #                 self._stream.width = frame.width
-    #                 self._stream.height = frame.height
-    #                 self._stream.pix_fmt = self.PIXEL_FORMAT
-    #                 self._stream.time_base = Fraction(1, self.FPS)
-    #                 self._stream.bit_rate = self.BIT_RATE
-    #                 self._frame_index = 0
-    #
-    #             frame.pts = self._frame_index
-    #             frame.time_base = Fraction(1, self.FPS)
-    #             self._frame_index += 1
-    #
-    #             for packet in self._stream.encode(frame):
-    #                 self._container.mux(packet)
-    #
-    #         except Exception as e:
-    #             logger.error(f"session: {self._session_id} - error adding frame in session: {e}")
-    #
     # async def finalize(self):
     #     logger.info(f"session: {self._session_id} - finalize video data to {self._output_file_path}")
     #     try:
@@ -162,6 +154,7 @@ class FrameCollector:
     #         logger.error(f"session: {self._session_id} - error getting metadata: {e}")
     #
     #     return self._output_file_path, self._file_name, self._metadata
+
 
     async def cleanup(self):
         logger.info(f"session: {self._session_id} - collector cleaning up")

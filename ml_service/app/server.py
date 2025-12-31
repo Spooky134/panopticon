@@ -16,14 +16,20 @@ class MLServiceServicer(ml_worker_pb2_grpc.MLServiceServicer):
                 frame = np.frombuffer(request.frame_data, dtype=np.uint8)
                 frame = frame.reshape((h, w, c)).copy()
 
+                boxes = [{"x": 50, "y": 50, "width": 150, "height": 150}]
+
+                boxes_proto = [
+                    ml_worker_pb2.BoundingBox(**b) for b in boxes
+                ]
+
                 # faces = detect_faces_dlib_cnn(frame, upsample=1)
                 #
                 # # Рисуем рамки
                 # for (x, y, w, h) in faces:
                 #     cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
-                cv2.rectangle(frame, (50, 50), (200, 200), (0, 255, 0), 2)
-                gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-                processed_frame = cv2.cvtColor(gray, cv2.COLOR_GRAY2BGR)
+                # cv2.rectangle(frame, (50, 50), (200, 200), (0, 255, 0), 2)
+                # gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+                # processed_frame = cv2.cvtColor(gray, cv2.COLOR_GRAY2BGR)
                 # processed_frame = frame
 
                 # processed_frame = detect_faces_simple(frame)
@@ -32,10 +38,7 @@ class MLServiceServicer(ml_worker_pb2_grpc.MLServiceServicer):
 
                 yield ml_worker_pb2.FrameResponse(
                     session_id=session_id,
-                    processed_frame_data=processed_frame.tobytes(),
-                    width=w,
-                    height=h,
-                    channels=c,
+                    boxes=boxes_proto,
                     comment=f"session: {session_id} - frame is processed",
                     ts=request.ts,
                 )

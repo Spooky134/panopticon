@@ -1,3 +1,5 @@
+import asyncio
+
 import av
 from aiortc import VideoStreamTrack
 from infrastructure.grpc_client.video_processor import VideoProcessor
@@ -21,14 +23,19 @@ class VideoTransformTrack(VideoStreamTrack):
         if self._processor:
             frame = await self._processor.process_frame(frame)
 
-        # TODO сохранение ломает работу
-        # if self._collector:
-        #     try:
-        #         frame_for_save = frame.reformat(format=final_frame.format)
-        #         asyncio.create_task(self._collector.add_frame(frame_for_save))
-        #     except Exception as e:
-        #         logger.error(f"session: {self._collector._session_id} - error adding frame to collector: {e}")
+        if self._collector:
+            try:
+                frame_copy = av.VideoFrame.from_ndarray(
+                    frame.to_ndarray(format=frame.format.name),
+                    format=frame.format.name
+                )
+                frame_copy.pts = frame.pts
+                frame_copy.time_base = frame.time_base
+                # frame_for_save = frame.reformat(format=frame.format)
+                asyncio.create_task(self._collector.add_frame(frame_copy))
+            except Exception as e:
+                logger.error(f"session: {self._collector._session_id} - error adding frame to collector: {e}")
 
         return frame
 
-# TODO выгрузка в отдельный задачу
+

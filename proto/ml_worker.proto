@@ -2,6 +2,12 @@ syntax = "proto3";
 
 package vstream_ml_model.ml_worker;
 
+message BoundingBox {
+  int32 x = 1;
+  int32 y = 2;
+  int32 width = 3;
+  int32 height = 4;
+}
 
 message FrameRequest {
   string session_id = 1;
@@ -15,12 +21,9 @@ message FrameRequest {
 
 message FrameResponse {
   string session_id = 1;
-  bytes processed_frame_data = 2;
-  int32 width = 3;
-  int32 height = 4;
-  int32 channels = 5;
   string comment = 6;
   int64 ts = 7;
+  repeated BoundingBox boxes = 8;
 }
 
 // обработка стриминг

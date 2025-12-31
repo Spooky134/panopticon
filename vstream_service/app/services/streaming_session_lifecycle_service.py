@@ -9,7 +9,7 @@ from core.logger import get_logger
 from api.exceptions.exeptions import NotFoundError
 from schemas.streaming_session import StreamingSessionORMCreate
 from core.engine.live_streaming_session_status import LiveStreamingSessionStatus
-from infrastructure.s3.s3_service import S3Service
+from infrastructure.s3.storage import S3Storage
 
 
 logger = get_logger(__name__)
@@ -17,7 +17,7 @@ logger = get_logger(__name__)
 class StreamingSessionLifecycleService:
     def __init__(self,
                  session_factory,
-                 s3_storage: S3Service = None,
+                 s3_storage: S3Storage = None,
                  ):
         self._session_factory = session_factory
         self.s3_storage = s3_storage
