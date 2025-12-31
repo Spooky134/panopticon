@@ -136,26 +136,6 @@ class FrameCollector:
         return self._output_file_path, self._file_name, self._metadata
 
 
-    # async def finalize(self):
-    #     logger.info(f"session: {self._session_id} - finalize video data to {self._output_file_path}")
-    #     try:
-    #         for packet in self._stream.encode():
-    #             self._container.mux(packet)
-    #
-    #         logger.info(f"session: {self._session_id} - the video is saved locally: {self._output_file_path}")
-    #     except Exception as e:
-    #         logger.error(f"session: {self._session_id} - error while compiling video: {e}")
-    #     finally:
-    #         self._container.close()
-    #     try:
-    #         logger.info(f"session: {self._session_id} - getting metadata...")
-    #         await self.get_metadata()
-    #     except Exception as e:
-    #         logger.error(f"session: {self._session_id} - error getting metadata: {e}")
-    #
-    #     return self._output_file_path, self._file_name, self._metadata
-
-
     async def cleanup(self):
         logger.info(f"session: {self._session_id} - collector cleaning up")
         try:
