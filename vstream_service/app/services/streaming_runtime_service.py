@@ -69,6 +69,7 @@ class StreamingRuntimeService:
 
 
         try:
+
             s3_key = await self._save_data_to_s3(streaming_session_id=streaming_session_id,
                                                  file_path=file_path,
                                                  object_name=file_name)
