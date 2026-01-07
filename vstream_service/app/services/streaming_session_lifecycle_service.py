@@ -5,7 +5,7 @@ from api.schemas.streaming_session import StreamingSessionCreateRequest, Streami
 from infrastructure.db.repositories import StreamingSessionRepository, StreamingVideoRepository
 from core.logger import get_logger
 from api.exceptions.exeptions import NotFoundError
-from schemas.streaming_session import StreamingSessionORMCreate
+from core.entities.streaming_session_data import StreamingSessionData
 from core.engine.live_streaming_session_status import LiveStreamingSessionStatus
 from infrastructure.s3.s3_video_storage import S3VideoStorage
 
@@ -27,13 +27,13 @@ class StreamingSessionLifecycleService:
 
         async with self._session_factory() as session:
             streaming_session_repository = StreamingSessionRepository(db=session)
-            new_streaming_session = StreamingSessionORMCreate(id=uuid.uuid4(),
-                                                              test_id=uuid.uuid4(),
-                                                              user_id=streaming_session_create.user_id,
-                                                              status=LiveStreamingSessionStatus.CREATED,
-                                                              created_at=datetime.now(timezone.utc))
+            new_streaming_session_data = StreamingSessionData(id=uuid.uuid4(),
+                                                         test_id=uuid.uuid4(),
+                                                         user_id=streaming_session_create.user_id,
+                                                         status=LiveStreamingSessionStatus.CREATED,
+                                                         created_at=datetime.now(timezone.utc))
 
-            streaming_session_created = await streaming_session_repository.create(streaming_session_data=new_streaming_session)
+            streaming_session_created = await streaming_session_repository.create(streaming_session_data=new_streaming_session_data)
             if streaming_session_created:
                 logger.info(f"session: {streaming_session_created.id} - created.")
 

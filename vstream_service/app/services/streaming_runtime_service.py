@@ -5,7 +5,7 @@ from core.engine.live_streaming_session_manager import LiveStreamingSessionManag
 from api.schemas.sdp import SDPData
 from infrastructure.s3.s3_video_storage import S3VideoStorage
 from core.logger import get_logger
-from schemas.streaming_video import StreamingVideoORMCreate, VideoMeta
+from core.entities.streaming_video_data import StreamingVideoData, VideoMetaData
 from core.engine.live_streaming_session_status import LiveStreamingSessionStatus
 from services.streaming_session_lifecycle_service import StreamingSessionLifecycleService
 
@@ -64,7 +64,7 @@ class StreamingRuntimeService:
                                file_name: str,
                                video_meta: dict):
         logger.info(f"session: {streaming_session_id} - saving results...")
-        new_streaming_video = None
+        new_streaming_video_data = None
         s3_key=None
 
 
@@ -83,7 +83,7 @@ class StreamingRuntimeService:
                                                                                      "width",
                                                                                      "height",
                                                                                      "fps",]}
-            new_streaming_video = StreamingVideoORMCreate(
+            new_streaming_video_data = StreamingVideoData(
                 streaming_session_id=streaming_session_id,
                 s3_key=s3_key,
                 s3_bucket=self.s3_video_storage.bucket_name,
@@ -94,7 +94,7 @@ class StreamingRuntimeService:
                 mime_type=video_meta.get("mime_type", None),
                 width=video_meta.get("width", None),
                 height=video_meta.get("height", None),
-                meta=VideoMeta(**meta)
+                meta=VideoMetaData(**meta)
             )
 
 
@@ -102,7 +102,7 @@ class StreamingRuntimeService:
         await self.streaming_session_lifecycle_service.update_session(streaming_session_id=streaming_session_id,
                                                                       data={"status": LiveStreamingSessionStatus.FINISHED,
                                                                             "ended_at": finished_at},
-                                                                      new_streaming_video=new_streaming_video)
+                                                                      new_streaming_video=new_streaming_video_data)
 
     async def _save_data_to_s3(self, streaming_session_id: UUID, file_path:str, object_name:str):
         s3_key = None

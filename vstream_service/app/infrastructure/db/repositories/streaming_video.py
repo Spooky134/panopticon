@@ -4,7 +4,8 @@ from sqlalchemy import select
 from sqlalchemy.orm import joinedload
 from infrastructure.db.models import StreamingVideo
 from core.logger import get_logger
-from schemas.streaming_video import StreamingVideoORMCreate
+from core.entities.streaming_video_data import StreamingVideoData
+from dataclasses import asdict
 import uuid
 
 
@@ -21,8 +22,8 @@ class StreamingVideoRepository:
             where(StreamingVideo.id == streaming_video_id))
         return streaming_video.scalar_one_or_none()
 
-    async def create(self, new_streaming_video: StreamingVideoORMCreate) -> StreamingVideo:
-        data_dict = new_streaming_video.model_dump()
+    async def create(self, new_streaming_video: StreamingVideoData) -> StreamingVideo:
+        data_dict = asdict(new_streaming_video)
         streaming_video = StreamingVideo(**data_dict)
 
         self.db.add(streaming_video)
