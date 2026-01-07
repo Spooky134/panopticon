@@ -82,12 +82,12 @@ services:
       - S3_REGION=${S3_REGION}
     depends_on:
       - ml_service
-      - coturn
       - storage
     expose:
       - ${VSTREAM_SERVICE_PORT}
     ports:
       - ${VSTREAM_SERVICE_PORT}:${VSTREAM_SERVICE_PORT}
+      - "10000-10100:10000-10100/udp"
     command: uvicorn main:app --host 0.0.0.0 --port ${VSTREAM_SERVICE_PORT} --workers 1
     networks:
       - mainnet
@@ -109,9 +109,7 @@ services:
     image: instrumentisto/coturn
     container_name: coturn
     restart: always
-    ports:
-      - "3478:3478/udp"            # STUN/TURN discovery
-      - "5349:5349/tcp"            # TURN over TLS (fallback)
+    network_mode: "host"
     command: >
       --no-cli
       --lt-cred-mech
@@ -121,8 +119,11 @@ services:
       --no-tls
       --no-dtls
       --log-file=stdout
-    networks:
-      - mainnet
+      --listening-ip=0.0.0.0
+      --relay-ip=${EXTERNAL_IP}
+      --min-port=10000
+      --max-port=10100
+      --verbose
   database:
     image: postgres:13
     container_name: database

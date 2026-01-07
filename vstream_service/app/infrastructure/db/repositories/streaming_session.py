@@ -26,8 +26,6 @@ class StreamingSessionRepository:
 
     async def create(self, streaming_session_data: StreamingSessionData) -> Optional[StreamingSession]:
         data_dict = asdict(streaming_session_data)
-        # data_dict['streaming_session_id'] = streaming_session_id
-
         new_streaming_session = StreamingSession(**data_dict)
 
         self.db.add(new_streaming_session)

@@ -1,7 +1,6 @@
-import uuid
+from uuid import UUID, uuid4
 from datetime import datetime, timezone
 
-from api.schemas.streaming_session import StreamingSessionCreateRequest, StreamingSessionResponse
 from infrastructure.db.repositories import StreamingSessionRepository, StreamingVideoRepository
 from core.logger import get_logger
 from api.exceptions.exeptions import NotFoundError
@@ -22,37 +21,49 @@ class StreamingSessionLifecycleService:
         self._s3_video_storage = s3_video_storage
 
 
-    async def create_session(self, streaming_session_create: StreamingSessionCreateRequest) -> StreamingSessionResponse:
+    async def create_session(self, user_id: int, test_id: UUID) -> dict:
         #TODO проверить есть ли сесиия чтобы не создавать еще одну при повторном запросе
 
         async with self._session_factory() as session:
             streaming_session_repository = StreamingSessionRepository(db=session)
-            new_streaming_session_data = StreamingSessionData(test_id=uuid.uuid4(),
-                                                              user_id=streaming_session_create.user_id,
+            new_streaming_session_data = StreamingSessionData(test_id=test_id,
+                                                              user_id=user_id,
                                                               status=LiveStreamingSessionStatus.CREATED,
                                                               created_at=datetime.now(timezone.utc))
 
-            streaming_session_created = await streaming_session_repository.create(streaming_session_data=new_streaming_session_data)
-            if streaming_session_created:
-                logger.info(f"session: {streaming_session_created.id} - created.")
+            streaming_session = await streaming_session_repository.create(streaming_session_data=new_streaming_session_data)
+            if streaming_session:
+                logger.info(f"session: {streaming_session.id} - created.")
 
 
-            return StreamingSessionResponse(streaming_session_id=streaming_session_created.id)
+            return {"streaming_session_id": streaming_session.id,
+                    "user_id": streaming_session.user_id,
+                    "test_id": streaming_session.test_id,
+                    "created_at": streaming_session.created_at,
+                    "started_at": streaming_session.started_at,
+                    "ended_at": streaming_session.ended_at,
+                    "status": streaming_session.status}
 
 
-    async def read_session(self, streaming_session_id: uuid.UUID):
+    async def read_session(self, streaming_session_id: UUID) -> dict:
         async with self._session_factory() as session:
             streaming_session_repository = StreamingSessionRepository(db=session)
 
-            session = await streaming_session_repository.get(streaming_session_id=streaming_session_id)
+            streaming_session = await streaming_session_repository.get(streaming_session_id=streaming_session_id)
 
-            if not session:
+            if not streaming_session:
                 raise NotFoundError
 
-            return session
+            return {"streaming_session_id": streaming_session.id,
+                    "user_id": streaming_session.user_id,
+                    "test_id": streaming_session.test_id,
+                    "created_at": streaming_session.created_at,
+                    "started_at": streaming_session.started_at,
+                    "ended_at": streaming_session.ended_at,
+                    "status": streaming_session.status}
 
 
-    async def update_session(self, streaming_session_id: uuid.UUID, streaming_session_data: StreamingSessionData, streaming_video_data=None):
+    async def update_session(self, streaming_session_id: UUID, streaming_session_data: StreamingSessionData, streaming_video_data=None):
         async with self._session_factory() as session:
             streaming_session_repository = StreamingSessionRepository(db=session)
             streaming_video_repository = StreamingVideoRepository(db=session)

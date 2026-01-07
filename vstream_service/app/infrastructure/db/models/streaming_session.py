@@ -20,7 +20,7 @@ class StreamingSession(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.now, nullable=False)
     started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=True)
     ended_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=True)
-    status: Mapped[str] = mapped_column(String(20), default="started", nullable=True, index=True)
+    status: Mapped[str] = mapped_column(String(20), default="created", nullable=True, index=True)
 
     # incidents = Column(JSONB)
     # ml_metrics = Column(JSONB)

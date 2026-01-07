@@ -21,7 +21,8 @@ class WebStreamView(View):
     def get(self, request):
         user = request.user
         response = requests.post(f"{settings.VSTREAM_INTERNAL_URL}/sessions",
-                                 json={"user_id": user.id},
+                                 json={"user_id": user.id,
+                                       "test_id": str(uuid.uuid4())},
                                  headers={"X-Api-Key": settings.SECRET_KEY})
                                  # timeout=3)
         data = response.json()
@@ -36,7 +37,7 @@ class WebStreamView(View):
         full_offer_url = request.build_absolute_uri(relative_offer_url)
         full_stop_url = request.build_absolute_uri(relative_stop_url)
 
-        print(full_stop_url)
+        # print(full_stop_url)
 
         context = {
             'stop_url': full_stop_url,
