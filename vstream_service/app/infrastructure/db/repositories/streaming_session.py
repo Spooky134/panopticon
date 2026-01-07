@@ -11,6 +11,7 @@ from dataclasses import asdict
 
 logger = get_logger(__name__)
 
+#TODO оптимизировать
 class StreamingSessionRepository:
     def __init__(self, db: AsyncSession):
         self.db = db
@@ -22,10 +23,11 @@ class StreamingSessionRepository:
             where(StreamingSession.id == streaming_session_id))
         return result.scalar_one_or_none()
 
-    # TODO поменять на схему session_data
+
     async def create(self, streaming_session_data: StreamingSessionData) -> Optional[StreamingSession]:
-        # data_dict = streaming_session_data.model_dump()
         data_dict = asdict(streaming_session_data)
+        # data_dict['streaming_session_id'] = streaming_session_id
+
         new_streaming_session = StreamingSession(**data_dict)
 
         self.db.add(new_streaming_session)
@@ -34,14 +36,16 @@ class StreamingSessionRepository:
 
         return await self.get(streaming_session_id=new_streaming_session.id)
 
-    async def update(self, streaming_session_id: UUID, data: dict) -> Optional[StreamingSession]:
+    async def update(self, streaming_session_id: UUID, streaming_session_data: StreamingSessionData) -> Optional[StreamingSession]:
         streaming_session = await self.get(streaming_session_id=streaming_session_id)
         if not streaming_session:
             logger.warning(f"testing_session: {streaming_session_id} -  Not found in DB.")
             return None
 
-        for field, value in data.items():
-            setattr(streaming_session, field, value)
+        streaming_session_data_dict = asdict(streaming_session_data)
+        for field, value in streaming_session_data_dict.items():
+            if value is not None:
+                setattr(streaming_session, field, value)
 
         # session.ended_at = data.get("ended_at", session.ended_at)
         # session.started_at = data.get("started_at", session.started_at)

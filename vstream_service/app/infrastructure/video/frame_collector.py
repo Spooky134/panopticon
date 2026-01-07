@@ -9,6 +9,7 @@ import queue
 from fractions import Fraction
 
 from core.logger import get_logger
+from core.entities.streaming_video_data import StreamingVideoData, VideoMetaData
 
 
 logger = get_logger(__name__)
@@ -181,17 +182,28 @@ class FrameCollector:
         else:
             avg_fps = None
 
-        self._metadata = {
-            "file_size": file_size,
-            "duration": duration,
-            "width": video_stream.codec_context.width,
-            "height": video_stream.codec_context.height,
-            "codec": video_stream.codec_context.name,
-            "frame_count": video_stream.frames if video_stream.frames else None,
-            "fps": avg_fps,
-            "bit_rate": video_stream.bit_rate if video_stream.bit_rate else None,
-            "mime_type": self.MIME_TYPE
-        }
+        # self._metadata = {
+        #     "file_size": file_size,
+        #     "duration": duration,
+        #     "width": video_stream.codec_context.width,
+        #     "height": video_stream.codec_context.height,
+        #     "codec": video_stream.codec_context.name,
+        #     "frame_count": video_stream.frames if video_stream.frames else None,
+        #     "fps": avg_fps,
+        #     "bit_rate": video_stream.bit_rate if video_stream.bit_rate else None,
+        #     "mime_type": self.MIME_TYPE
+        # }
+
+        self._metadata=VideoMetaData(file_size=file_size,
+                                     duration=duration,
+                                     width=video_stream.codec_context.width,
+                                     height=video_stream.codec_context.height,
+                                     codec=video_stream.codec_context.name,
+                                     frame_count=video_stream.frames if video_stream.frames else None,
+                                     fps=avg_fps,
+                                     bit_rate=video_stream.bit_rate if video_stream.bit_rate else None,
+                                     mime_type=self.MIME_TYPE)
+
         container.close()
 
         return self._metadata

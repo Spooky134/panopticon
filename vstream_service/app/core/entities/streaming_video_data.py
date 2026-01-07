@@ -1,25 +1,34 @@
 from datetime import datetime
 from typing import Optional
 from uuid import UUID
-from dataclasses import dataclass
+from dataclasses import dataclass, asdict
 
-@dataclass
+
+
+@dataclass(frozen=True)
 class VideoMetaData:
-    codec: Optional[str] = None
-    frame_count: Optional[int] = None
+    width: Optional[int]
+    height: Optional[int]
+    duration: Optional[float]
+    codec: Optional[str]
+    file_size: Optional[int]
+    mime_type: Optional[str]
+    fps: Optional[float] = None
     bit_rate: Optional[float] = None
+    frame_count: Optional[int] = None
+
+    def get_extra(self) -> dict:
+        main_columns = {"width", "height", "duration", "fps", "mime_type", "file_size"}
+
+        all_data = asdict(self)
+        return {k: v for k, v in all_data.items() if k not in main_columns}
 
 
-@dataclass
+@dataclass(frozen=True)
 class StreamingVideoData:
-    streaming_session_id: UUID
     s3_key: str
     s3_bucket: str
     created_at: datetime
-    duration: Optional[float] = None
-    fps: Optional[float] = None
-    file_size: Optional[int] = None
-    mime_type: Optional[str] = None
-    width: Optional[int] = None
-    height: Optional[int] = None
     meta: Optional[VideoMetaData] = None
+
+

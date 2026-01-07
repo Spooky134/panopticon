@@ -12,6 +12,7 @@ from infrastructure.s3.s3_video_storage import S3VideoStorage
 
 logger = get_logger(__name__)
 
+#TODO получается так что половина методов принимает схемы а другая принимает dto
 class StreamingSessionLifecycleService:
     def __init__(self,
                  session_factory,
@@ -23,15 +24,13 @@ class StreamingSessionLifecycleService:
 
     async def create_session(self, streaming_session_create: StreamingSessionCreateRequest) -> StreamingSessionResponse:
         #TODO проверить есть ли сесиия чтобы не создавать еще одну при повторном запросе
-        #TODO где давать id для сессии
 
         async with self._session_factory() as session:
             streaming_session_repository = StreamingSessionRepository(db=session)
-            new_streaming_session_data = StreamingSessionData(id=uuid.uuid4(),
-                                                         test_id=uuid.uuid4(),
-                                                         user_id=streaming_session_create.user_id,
-                                                         status=LiveStreamingSessionStatus.CREATED,
-                                                         created_at=datetime.now(timezone.utc))
+            new_streaming_session_data = StreamingSessionData(test_id=uuid.uuid4(),
+                                                              user_id=streaming_session_create.user_id,
+                                                              status=LiveStreamingSessionStatus.CREATED,
+                                                              created_at=datetime.now(timezone.utc))
 
             streaming_session_created = await streaming_session_repository.create(streaming_session_data=new_streaming_session_data)
             if streaming_session_created:
@@ -53,14 +52,14 @@ class StreamingSessionLifecycleService:
             return session
 
 
-    async def update_session(self, streaming_session_id: uuid.UUID, data: dict, new_streaming_video=None):
+    async def update_session(self, streaming_session_id: uuid.UUID, streaming_session_data: StreamingSessionData, streaming_video_data=None):
         async with self._session_factory() as session:
             streaming_session_repository = StreamingSessionRepository(db=session)
             streaming_video_repository = StreamingVideoRepository(db=session)
 
-            if new_streaming_video:
-                await streaming_video_repository.create(new_streaming_video=new_streaming_video)
+            if streaming_video_data:
+                await streaming_video_repository.create(streaming_session_id=streaming_session_id, streaming_video_data=streaming_video_data)
 
-            await streaming_session_repository.update(streaming_session_id=streaming_session_id, data=data)
+            await streaming_session_repository.update(streaming_session_id=streaming_session_id, streaming_session_data=streaming_session_data)
 
             # await session.commit()
