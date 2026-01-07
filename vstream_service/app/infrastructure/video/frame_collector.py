@@ -15,6 +15,7 @@ logger = get_logger(__name__)
 
 
 class FrameCollector:
+
     def __init__(self, session_id: UUID):
         self._session_id = session_id
 

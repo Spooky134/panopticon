@@ -7,7 +7,7 @@ from uuid import UUID
 
 from api.schemas.sdp import SDPData
 from core.logger import get_logger
-from utils.frame_collector import FrameCollector
+from infrastructure.video.frame_collector import FrameCollector
 from infrastructure.grpc_client.video_processor import VideoProcessor
 from infrastructure.webrtc.video_transform_track import VideoTransformTrack
 
@@ -77,6 +77,7 @@ class LiveStreamingSession:
         offer = RTCSessionDescription(sdp_data.sdp, sdp_data.type)
         await self._peer_connection.setRemoteDescription(offer)
 
+        #TODO ограничить скорость сбора кандидатов
         await asyncio.sleep(1)
         answer = await self._peer_connection.createAnswer()
         await self._peer_connection.setLocalDescription(answer)

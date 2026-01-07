@@ -1,16 +1,15 @@
 from uuid import UUID
 
 from api.schemas.sdp import SDPData
-from utils.frame_collector_factory import FrameCollectorFactory
+from infrastructure.video.frame_collector_factory import FrameCollectorFactory
 from core.engine.live_streaming_session import LiveStreamingSession
-from infrastructure.grpc_client.processor_factory import VideoProcessorFactory
+from infrastructure.grpc_client.video_processor_factory import VideoProcessorFactory
 
 from core.logger import get_logger
 
-from infrastructure.webrtc.get_connection_factory import ConnectionFactory
+from infrastructure.webrtc.connection_factory import ConnectionFactory
 
 logger = get_logger(__name__)
-
 
 
 class LiveStreamingSessionManager:

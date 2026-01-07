@@ -1,6 +1,6 @@
 import uuid
 
-from utils.frame_collector import FrameCollector
+from infrastructure.video.frame_collector import FrameCollector
 
 
 #TODO настройки для коллектора

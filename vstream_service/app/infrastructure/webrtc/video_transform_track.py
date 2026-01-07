@@ -3,7 +3,7 @@ import asyncio
 import av
 from aiortc import VideoStreamTrack
 from infrastructure.grpc_client.video_processor import VideoProcessor
-from utils.frame_collector import FrameCollector
+from infrastructure.video.frame_collector import FrameCollector
 from core.logger import get_logger
 
 
