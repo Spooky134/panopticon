@@ -6,7 +6,7 @@ from core.logger import get_logger
 logger = get_logger(__name__)
 
 
-class S3Storage:
+class S3VideoStorage:
     def __init__(self, s3_client, bucket_name: str, prefix="videos"):
         self.client = s3_client
         self.bucket_name = bucket_name
@@ -71,3 +71,8 @@ class S3Storage:
             logger.error(f"Error when upload_bytes: {e}")
 
         return s3_key
+
+    async def close(self):
+        if self.client:
+            logger.info(f"Closing S3 storage client")
+            await self.client.__aexit__(None, None, None)

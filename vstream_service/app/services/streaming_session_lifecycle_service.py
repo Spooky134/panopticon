@@ -1,15 +1,13 @@
 import uuid
 from datetime import datetime, timezone
 
-from sqlalchemy.ext.asyncio import async_sessionmaker
-
 from api.schemas.streaming_session import StreamingSessionCreateRequest, StreamingSessionResponse
 from infrastructure.db.repositories import StreamingSessionRepository, StreamingVideoRepository
 from core.logger import get_logger
 from api.exceptions.exeptions import NotFoundError
 from schemas.streaming_session import StreamingSessionORMCreate
 from core.engine.live_streaming_session_status import LiveStreamingSessionStatus
-from infrastructure.s3.storage import S3Storage
+from infrastructure.s3.s3_video_storage import S3VideoStorage
 
 
 logger = get_logger(__name__)
@@ -17,10 +15,10 @@ logger = get_logger(__name__)
 class StreamingSessionLifecycleService:
     def __init__(self,
                  session_factory,
-                 s3_storage: S3Storage = None,
+                 s3_video_storage: S3VideoStorage = None,
                  ):
         self._session_factory = session_factory
-        self.s3_storage = s3_storage
+        self._s3_video_storage = s3_video_storage
 
 
     async def create_session(self, streaming_session_create: StreamingSessionCreateRequest) -> StreamingSessionResponse:

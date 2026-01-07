@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 
 from core.engine.live_streaming_session_manager import LiveStreamingSessionManager
 from api.schemas.sdp import SDPData
-from infrastructure.s3.storage import S3Storage
+from infrastructure.s3.s3_video_storage import S3VideoStorage
 from core.logger import get_logger
 from schemas.streaming_video import StreamingVideoORMCreate, VideoMeta
 from core.engine.live_streaming_session_status import LiveStreamingSessionStatus
@@ -16,11 +16,11 @@ class StreamingRuntimeService:
     def __init__(self,
                  streaming_session_manager: LiveStreamingSessionManager,
                  streaming_session_lifecycle_service: StreamingSessionLifecycleService,
-                 s3_storage: S3Storage = None,
+                 s3_video_storage: S3VideoStorage = None,
                  ):
         self.streaming_session_lifecycle_service = streaming_session_lifecycle_service
         self.streaming_session_manager = streaming_session_manager
-        self.s3_storage = s3_storage
+        self.s3_video_storage = s3_video_storage
 
     async def offer(self, streaming_session_id: UUID, sdp_data: SDPData) -> dict:
         user_id = 1
@@ -86,7 +86,7 @@ class StreamingRuntimeService:
             new_streaming_video = StreamingVideoORMCreate(
                 streaming_session_id=streaming_session_id,
                 s3_key=s3_key,
-                s3_bucket=self.s3_storage.bucket_name,
+                s3_bucket=self.s3_video_storage.bucket_name,
                 created_at=datetime.now(timezone.utc),
                 duration=video_meta.get("duration", None),
                 fps=video_meta.get("fps", None),
@@ -108,7 +108,7 @@ class StreamingRuntimeService:
         s3_key = None
         try:
             logger.info(f"session: {streaming_session_id} - loading {file_path} → {object_name}")
-            s3_key = await self.s3_storage.upload_multipart(file_path=file_path, object_name=object_name)
+            s3_key = await self.s3_video_storage.upload_multipart(file_path=file_path, object_name=object_name)
             #TODO говорит все успешно хотя загрузки небыло
             logger.info(f"session: {streaming_session_id} - the video has been successfully uploaded to S3: {object_name}")
         except Exception as e:
