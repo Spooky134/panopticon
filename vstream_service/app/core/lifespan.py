@@ -8,6 +8,7 @@ from infrastructure.s3.s3_video_storage_factory import create_s3_video_storage
 from infrastructure.video.frame_collector_factory import FrameCollectorFactory
 from infrastructure.webrtc.connection_factory import ConnectionFactory
 from infrastructure.grpc_client.video_processor_factory import VideoProcessorFactory
+from core.events import EventManager
 from config import settings
 
 logger = get_logger(__name__)
@@ -15,6 +16,9 @@ logger = get_logger(__name__)
 #TODO просмотреть
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    event_bus = EventManager()
+    app.state.event_bus = event_bus
+
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
 

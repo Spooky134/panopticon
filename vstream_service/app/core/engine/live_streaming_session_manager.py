@@ -11,7 +11,7 @@ from infrastructure.webrtc.connection_factory import ConnectionFactory
 
 logger = get_logger(__name__)
 
-
+#TODO события конфликтуют если несколько сессий
 class LiveStreamingSessionManager:
     def __init__(self,
                  connection_factory: ConnectionFactory,

@@ -7,19 +7,15 @@ from core.logger import get_logger
 from api.exceptions.exeptions import NotFoundError
 from core.entities.streaming_session_data import StreamingSessionData
 from core.engine.live_streaming_session_status import LiveStreamingSessionStatus
-from infrastructure.s3.s3_video_storage import S3VideoStorage
 
 
 logger = get_logger(__name__)
 
-#TODO получается так что половина методов принимает схемы а другая принимает dto
+
 class StreamingSessionLifecycleService:
     def __init__(self,
-                 session_factory,
-                 s3_video_storage: S3VideoStorage = None,
-                 ):
+                 session_factory):
         self._session_factory = session_factory
-        self._s3_video_storage = s3_video_storage
 
 
     async def create_session(self, user_id: int, test_id: UUID) -> Tuple[UUID, StreamingSessionData]:
@@ -65,14 +61,15 @@ class StreamingSessionLifecycleService:
             return streaming_session.id, streaming_session_data
 
 
-    async def update_session(self, streaming_session_id: UUID, streaming_session_data: StreamingSessionData, streaming_video_data=None):
+    async def update_session(self, streaming_session_id: UUID, streaming_session_data: StreamingSessionData):
         async with self._session_factory() as session:
             streaming_session_repository = StreamingSessionRepository(db=session)
-            streaming_video_repository = StreamingVideoRepository(db=session)
-
-            if streaming_video_data:
-                await streaming_video_repository.create(streaming_session_id=streaming_session_id, streaming_video_data=streaming_video_data)
-
             await streaming_session_repository.update(streaming_session_id=streaming_session_id, streaming_session_data=streaming_session_data)
 
             # await session.commit()
+
+    async def attached_session_video(self, streaming_session_id: UUID, streaming_video_data):
+        async with self._session_factory() as session:
+            streaming_video_repository = StreamingVideoRepository(db=session)
+            await streaming_video_repository.create(streaming_session_id=streaming_session_id, streaming_video_data=streaming_video_data)
+
