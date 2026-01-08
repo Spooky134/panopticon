@@ -1,11 +1,12 @@
 import asyncio
 from datetime import datetime, timezone
-from typing import Callable, Awaitable
+from typing import Callable, Awaitable, Optional, Tuple
 
 from aiortc import RTCSessionDescription, RTCPeerConnection
 from uuid import UUID
 
-from api.schemas.sdp import SDPData
+from core.entities.sdp_data import SDPData
+from core.entities.streaming_video_data import VideoMetaData
 from core.logger import get_logger
 from infrastructure.video.frame_collector import FrameCollector
 from infrastructure.grpc_client.video_processor import VideoProcessor
@@ -18,7 +19,6 @@ logger = get_logger(__name__)
 class LiveStreamingSession:
     def __init__(self,
                  session_id: UUID,
-                 user_id: int,
                  peer_connection: RTCPeerConnection,
                  grpc_processor: VideoProcessor,
                  collector: FrameCollector,
@@ -26,7 +26,6 @@ class LiveStreamingSession:
                  ):
 
         self._id = session_id
-        self._user_id = user_id
         self._peer_connection = peer_connection
         self._grpc_processor = grpc_processor
         self._collector = collector
@@ -45,12 +44,12 @@ class LiveStreamingSession:
 
 
     @property
-    def started_at(self):
+    def started_at(self) -> datetime:
         return self._started_at
 
 
     @property
-    def finished_at(self):
+    def finished_at(self) -> datetime:
         return self._finished_at
 
 
@@ -70,7 +69,7 @@ class LiveStreamingSession:
             self._peer_connection.addTrack(transformed)
 
 
-    async def start(self, sdp_data: SDPData):
+    async def start(self, sdp_data: SDPData) -> SDPData:
         logger.info(f"session: {self._id} - starting...")
         await self._grpc_processor.start()
 
@@ -83,16 +82,13 @@ class LiveStreamingSession:
         await self._peer_connection.setLocalDescription(answer)
 
         self._started_at = datetime.now(timezone.utc)
-        logger.info(f"session: {self._id} - started for user {self._user_id}")
+        logger.info(f"session: {self._id} - started")
 
-        #TODO заменить на схему
-        return {
-            "sdp": self._peer_connection.localDescription.sdp,
-            "type": self._peer_connection.localDescription.type,
-        }
+        return SDPData(sdp=self._peer_connection.localDescription.sdp,
+                       type=self._peer_connection.localDescription.type)
 
 
-    async def finalize(self):
+    async def finalize(self) -> Tuple[Optional[str], Optional[str], Optional[VideoMetaData]]:
         self._finished_at = datetime.now(timezone.utc)
 
         video_file_path, video_file_name, video_meta = None, None, None

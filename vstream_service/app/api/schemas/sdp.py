@@ -1,5 +1,5 @@
 from pydantic import BaseModel
 
-class SDPData(BaseModel):
+class SDP(BaseModel):
     sdp: str
     type: str

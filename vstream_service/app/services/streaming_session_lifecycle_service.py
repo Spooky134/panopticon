@@ -1,4 +1,5 @@
-from uuid import UUID, uuid4
+from typing import Tuple
+from uuid import UUID
 from datetime import datetime, timezone
 
 from infrastructure.db.repositories import StreamingSessionRepository, StreamingVideoRepository
@@ -21,7 +22,7 @@ class StreamingSessionLifecycleService:
         self._s3_video_storage = s3_video_storage
 
 
-    async def create_session(self, user_id: int, test_id: UUID) -> dict:
+    async def create_session(self, user_id: int, test_id: UUID) -> Tuple[UUID, StreamingSessionData]:
         #TODO проверить есть ли сесиия чтобы не создавать еще одну при повторном запросе
 
         async with self._session_factory() as session:
@@ -35,17 +36,17 @@ class StreamingSessionLifecycleService:
             if streaming_session:
                 logger.info(f"session: {streaming_session.id} - created.")
 
+            streaming_session_data = StreamingSessionData(user_id=streaming_session.user_id,
+                                                          test_id=streaming_session.test_id,
+                                                          created_at=streaming_session.created_at,
+                                                          started_at=streaming_session.started_at,
+                                                          ended_at=streaming_session.ended_at,
+                                                          status=streaming_session.status)
 
-            return {"streaming_session_id": streaming_session.id,
-                    "user_id": streaming_session.user_id,
-                    "test_id": streaming_session.test_id,
-                    "created_at": streaming_session.created_at,
-                    "started_at": streaming_session.started_at,
-                    "ended_at": streaming_session.ended_at,
-                    "status": streaming_session.status}
+            return streaming_session.id, streaming_session_data
 
 
-    async def read_session(self, streaming_session_id: UUID) -> dict:
+    async def read_session(self, streaming_session_id: UUID) -> Tuple[UUID, StreamingSessionData]:
         async with self._session_factory() as session:
             streaming_session_repository = StreamingSessionRepository(db=session)
 
@@ -54,13 +55,14 @@ class StreamingSessionLifecycleService:
             if not streaming_session:
                 raise NotFoundError
 
-            return {"streaming_session_id": streaming_session.id,
-                    "user_id": streaming_session.user_id,
-                    "test_id": streaming_session.test_id,
-                    "created_at": streaming_session.created_at,
-                    "started_at": streaming_session.started_at,
-                    "ended_at": streaming_session.ended_at,
-                    "status": streaming_session.status}
+            streaming_session_data = StreamingSessionData(user_id=streaming_session.user_id,
+                                                          test_id=streaming_session.test_id,
+                                                          created_at=streaming_session.created_at,
+                                                          started_at=streaming_session.started_at,
+                                                          ended_at=streaming_session.ended_at,
+                                                          status=streaming_session.status)
+
+            return streaming_session.id, streaming_session_data
 
 
     async def update_session(self, streaming_session_id: UUID, streaming_session_data: StreamingSessionData, streaming_video_data=None):

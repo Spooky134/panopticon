@@ -80,11 +80,14 @@ services:
       - S3_SECRET_KEY=${S3_SECRET_KEY}
       - S3_BUCKET_NAME=${S3_BUCKET_NAME}
       - S3_REGION=${S3_REGION}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     depends_on:
       - ml_service
       - storage
-    expose:
-      - ${VSTREAM_SERVICE_PORT}
+    # expose:
+    #   - ${VSTREAM_SERVICE_PORT}
+    
     ports:
       - ${VSTREAM_SERVICE_PORT}:${VSTREAM_SERVICE_PORT}
       - "10000-10100:10000-10100/udp"
@@ -120,7 +123,7 @@ services:
       --no-dtls
       --log-file=stdout
       --listening-ip=0.0.0.0
-      --relay-ip=${EXTERNAL_IP}
+      --relay-ip=0.0.0.0
       --min-port=10000
       --max-port=10100
       --verbose

@@ -8,24 +8,28 @@ logger = get_logger(__name__)
 
 class S3VideoStorage:
     def __init__(self, s3_client, bucket_name: str, prefix="videos"):
-        self.client = s3_client
-        self.bucket_name = bucket_name
-        self.prefix = prefix
+        self._client = s3_client
+        self._bucket_name = bucket_name
+        self._prefix = prefix
+
+    @property
+    def bucket_name(self):
+        return self._bucket_name
 
     async def ensure_bucket(self):
         try:
-            await self.client.head_bucket(Bucket=self.bucket_name)
-            logger.info(f"Bucket '{self.bucket_name}' found")
+            await self._client.head_bucket(Bucket=self._bucket_name)
+            logger.info(f"Bucket '{self._bucket_name}' found")
         except ClientError as e:
-            logger.warning(f"Bucket not found, creating one: {self.bucket_name} ({e})")
-            await self.client.create_bucket(Bucket=self.bucket_name)
+            logger.warning(f"Bucket not found, creating one: {self._bucket_name} ({e})")
+            await self._client.create_bucket(Bucket=self._bucket_name)
 
     async def upload_file(self, file_path: str, object_name: str) -> str:
-        logger.info(f"Simple Loading {file_path} → {self.bucket_name}/{self.prefix}/{object_name}")
+        logger.info(f"Simple Loading {file_path} → {self._bucket_name}/{self._prefix}/{object_name}")
 
-        s3_key = f"{self.prefix}/{object_name}"
+        s3_key = f"{self._prefix}/{object_name}"
         try:
-            await self.client.upload_file(Bucket=self.bucket_name,
+            await self._client.upload_file(Bucket=self._bucket_name,
                                           Key=s3_key,
                                           Filename=file_path,
                                           )
@@ -35,19 +39,19 @@ class S3VideoStorage:
 
         return s3_key
 
-    async def upload_multipart(self, file_path: str, object_name: str):
-        logger.info(f"Multipart loading {file_path} → {self.bucket_name}/{self.prefix}/{object_name}")
-        s3_key = f"{self.prefix}/{object_name}"
+    async def upload_multipart(self, file_path: str, object_name: str) -> str:
+        logger.info(f"Multipart loading {file_path} → {self._bucket_name}/{self._prefix}/{object_name}")
+        s3_key = f"{self._prefix}/{object_name}"
         try:
-            mp = await self.client.create_multipart_upload(Bucket=self.bucket_name, Key=s3_key)
+            mp = await self._client.create_multipart_upload(Bucket=self._bucket_name, Key=s3_key)
             parts = []
             part_number = 1
             chunk_size = 5 * 1024 * 1024
 
             with open(file_path, "rb") as file:
                 while chunk := file.read(chunk_size):
-                    resp = await self.client.upload_part(
-                        Bucket=self.bucket_name,
+                    resp = await self._client.upload_part(
+                        Bucket=self._bucket_name,
                         Key=s3_key,
                         PartNumber=part_number,
                         UploadId=mp["UploadId"],
@@ -59,8 +63,8 @@ class S3VideoStorage:
                     })
                     part_number += 1
 
-            await self.client.complete_multipart_upload(
-                Bucket=self.bucket_name,
+            await self._client.complete_multipart_upload(
+                Bucket=self._bucket_name,
                 Key=s3_key,
                 UploadId=mp["UploadId"],
                 MultipartUpload={"Parts": parts}
@@ -73,6 +77,6 @@ class S3VideoStorage:
         return s3_key
 
     async def close(self):
-        if self.client:
+        if self._client:
             logger.info(f"Closing S3 storage client")
-            await self.client.__aexit__(None, None, None)
+            await self._client.__aexit__(None, None, None)

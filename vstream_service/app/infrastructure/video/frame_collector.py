@@ -1,22 +1,19 @@
 import os
-from fractions import Fraction
-
+from typing import Tuple
 import av
-import asyncio
 from uuid import UUID
 import threading
 import queue
 from fractions import Fraction
 
 from core.logger import get_logger
-from core.entities.streaming_video_data import StreamingVideoData, VideoMetaData
+from core.entities.streaming_video_data import VideoMetaData
 
 
 logger = get_logger(__name__)
 
 
 class FrameCollector:
-
     def __init__(self, session_id: UUID):
         self._session_id = session_id
 
@@ -49,16 +46,15 @@ class FrameCollector:
         self._stream = None
         self._frame_index = 0
 
-
     @property
-    def file_name(self):
+    def file_name(self) -> str:
         return self._file_name
 
     @property
-    def output_file_path(self):
+    def output_file_path(self) -> str:
         return self._output_file_path
 
-    def file_exists(self):
+    def file_exists(self) -> bool:
         return os.path.exists(self._output_file_path)
 
     async def add_frame(self, frame: av.VideoFrame):
@@ -119,7 +115,7 @@ class FrameCollector:
             self._container.close()
             logger.info(f"session: {self._session_id} - container closed")
 
-    async def finalize(self):
+    async def finalize(self) -> Tuple[str, str, VideoMetaData]:
         logger.info(f"session: {self._session_id} - finalizing video data to {self._output_file_path}")
 
         self._running = False
@@ -148,7 +144,7 @@ class FrameCollector:
             logger.error(f"session: {self._session_id} - error removing temporary file: {e}")
 
 
-    async def get_metadata(self):
+    async def get_metadata(self) -> VideoMetaData:
         if self._metadata:
             return self._metadata
 
@@ -181,18 +177,6 @@ class FrameCollector:
             avg_fps = float(video_stream.average_rate)
         else:
             avg_fps = None
-
-        # self._metadata = {
-        #     "file_size": file_size,
-        #     "duration": duration,
-        #     "width": video_stream.codec_context.width,
-        #     "height": video_stream.codec_context.height,
-        #     "codec": video_stream.codec_context.name,
-        #     "frame_count": video_stream.frames if video_stream.frames else None,
-        #     "fps": avg_fps,
-        #     "bit_rate": video_stream.bit_rate if video_stream.bit_rate else None,
-        #     "mime_type": self.MIME_TYPE
-        # }
 
         self._metadata=VideoMetaData(file_size=file_size,
                                      duration=duration,
