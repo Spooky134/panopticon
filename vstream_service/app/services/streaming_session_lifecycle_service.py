@@ -11,7 +11,6 @@ from infrastructure.db.repositories import StreamingSessionRepository, Streaming
 
 logger = get_logger(__name__)
 
-
 class StreamingSessionLifecycleService:
     def __init__(self,
                  session_factory):

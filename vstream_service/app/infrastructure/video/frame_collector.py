@@ -14,12 +14,12 @@ logger = get_logger(__name__)
 
 class FrameCollector:
     def __init__(self, streaming_session_id: UUID):
-        self._streaming_session_id = streaming_session_id
+        self._STREAMING_SESSION_ID = streaming_session_id
 
-        self._temp_dir = f"/tmp/collected_data/"
-        os.makedirs(self._temp_dir, exist_ok=True)
-        self._file_name = f"{self._streaming_session_id}.mp4"
-        self._output_file_path = os.path.join(self._temp_dir, self._file_name)
+        self._TEMP_DIR = f"/tmp/collected_data/"
+        os.makedirs(self._TEMP_DIR, exist_ok=True)
+        self._FILE_NAME = f"{self._STREAMING_SESSION_ID}.mp4"
+        self._OUTPUT_FILE_PATH = os.path.join(self._TEMP_DIR, self._FILE_NAME)
 
         self.FPS = 30
         self.CODEC = "libx264"
@@ -45,17 +45,6 @@ class FrameCollector:
         self._stream = None
         self._frame_index = 0
 
-    @property
-    def file_name(self) -> str:
-        return self._file_name
-
-    @property
-    def output_file_path(self) -> str:
-        return self._output_file_path
-
-    def file_exists(self) -> bool:
-        return os.path.exists(self._output_file_path)
-
     async def add_frame(self, frame: av.VideoFrame):
         if not self._running:
             return
@@ -63,17 +52,17 @@ class FrameCollector:
             # frame_copy = frame.reformat(format=frame.format)
             self._queue.put_nowait(frame)
         except queue.Full:
-            logger.warning(f"session: {self._streaming_session_id} - drop recording frame (queue full)")
+            logger.warning(f"session: {self._STREAMING_SESSION_ID} - drop recording frame (queue full)")
         except Exception as e:
-            logger.error(f"session: {self._streaming_session_id} - error queuing frame: {e}")
+            logger.error(f"session: {self._STREAMING_SESSION_ID} - error queuing frame: {e}")
 
     def _recording_worker(self):
-        logger.info(f"session: {self._streaming_session_id} - recording thread started")
+        logger.info(f"session: {self._STREAMING_SESSION_ID} - recording thread started")
 
         try:
-            self._container = av.open(self._output_file_path, mode="w")
+            self._container = av.open(self._OUTPUT_FILE_PATH, mode="w")
         except Exception as e:
-            logger.error(f"session: {self._streaming_session_id} - failed to open file: {e}")
+            logger.error(f"session: {self._STREAMING_SESSION_ID} - failed to open file: {e}")
             return
 
         while self._running or not self._queue.empty():
@@ -99,7 +88,7 @@ class FrameCollector:
                     self._container.mux(packet)
 
             except Exception as e:
-                logger.error(f"session: {self._streaming_session_id} - encode error: {e}")
+                logger.error(f"session: {self._STREAMING_SESSION_ID} - encode error: {e}")
             finally:
                 self._queue.task_done()
 
@@ -108,56 +97,47 @@ class FrameCollector:
                 for packet in self._stream.encode():
                     self._container.mux(packet)
             except Exception as e:
-                logger.error(f"session: {self._streaming_session_id} - final encode error: {e}")
+                logger.error(f"session: {self._STREAMING_SESSION_ID} - final encode error: {e}")
 
         if self._container is not None:
             self._container.close()
-            logger.info(f"session: {self._streaming_session_id} - container closed")
+            logger.info(f"session: {self._STREAMING_SESSION_ID} - container closed")
 
     async def finalize(self) -> Tuple[str, VideoMetaEntity]:
-        logger.info(f"session: {self._streaming_session_id} - finalizing video data to {self._output_file_path}")
+        logger.info(f"session: {self._STREAMING_SESSION_ID} - finalizing video data to {self._OUTPUT_FILE_PATH}")
 
         self._running = False
 
         if self._worker_thread.is_alive():
             self._worker_thread.join(timeout=5.0)
-            logger.info(f"session: {self._streaming_session_id} - recording thread stopped")
+            logger.info(f"session: {self._STREAMING_SESSION_ID} - recording thread stopped")
 
         try:
-            logger.info(f"session: {self._streaming_session_id} - getting metadata...")
+            logger.info(f"session: {self._STREAMING_SESSION_ID} - getting metadata...")
             self._metadata = await self.get_metadata()
         except Exception as e:
-            logger.error(f"session: {self._streaming_session_id} - error getting metadata: {e}")
+            logger.error(f"session: {self._STREAMING_SESSION_ID} - error getting metadata: {e}")
             self._metadata = None
 
-        return self._output_file_path, self._metadata
-
-    async def cleanup(self):
-        logger.info(f"session: {self._streaming_session_id} - collector cleaning up")
-        try:
-            if os.path.exists(self._output_file_path):
-                os.remove(self._output_file_path)
-            logger.info(f"session: {self._streaming_session_id} - temporary file removed")
-        except Exception as e:
-            logger.error(f"session: {self._streaming_session_id} - error removing temporary file: {e}")
+        return self._OUTPUT_FILE_PATH, self._metadata
 
     async def get_metadata(self) -> VideoMetaEntity:
         if self._metadata:
             return self._metadata
 
-        if not os.path.exists(self._output_file_path):
-            logger.warning(f"session: {self._streaming_session_id} - no metadata file found, creating new one")
+        if not os.path.exists(self._OUTPUT_FILE_PATH):
+            logger.warning(f"session: {self._STREAMING_SESSION_ID} - no metadata file found, creating new one")
             return None
 
         try:
-            container = av.open(self._output_file_path, mode="r")
+            container = av.open(self._OUTPUT_FILE_PATH, mode="r")
         except Exception as e:
-            logger.error(f"session: {self._streaming_session_id} - failed to open video for metadata: {e}")
+            logger.error(f"session: {self._STREAMING_SESSION_ID} - failed to open video for metadata: {e}")
             return None
         video_stream = next((s for s in container.streams if s.type == "video"), None)
 
         if not video_stream:
-            logger.error(f"session: {self._streaming_session_id} - no video stream found in file")
+            logger.error(f"session: {self._STREAMING_SESSION_ID} - no video stream found in file")
             return None
 
         if video_stream.duration is not None and video_stream.time_base is not None:
@@ -168,7 +148,7 @@ class FrameCollector:
             else:
                 duration = None
 
-        file_size = os.path.getsize(self.output_file_path)
+        file_size = os.path.getsize(self._OUTPUT_FILE_PATH)
 
         if video_stream.average_rate:
             avg_fps = float(video_stream.average_rate)
