@@ -2,7 +2,6 @@ import asyncio
 import inspect
 from typing import Any, Callable, Coroutine, Dict, List, Optional, Tuple, Union
 from core.logger import get_logger
-from infrastructure.db.models import StreamingSession
 
 logger = get_logger(__name__)
 

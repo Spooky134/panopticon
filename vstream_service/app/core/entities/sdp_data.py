@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 
+
 @dataclass(frozen=True)
-class SDPData:
+class SDPEntity:
     sdp: str
     type: str

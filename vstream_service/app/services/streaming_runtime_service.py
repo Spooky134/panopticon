@@ -1,13 +1,11 @@
-from typing import Optional
 from uuid import UUID
-from datetime import datetime, timezone
+from datetime import datetime
 
 from core.engine.live_streaming_session_manager import LiveStreamingSessionManager
-from core.entities.sdp_data import SDPData
-from core.entities.streaming_session_data import StreamingSessionData
+from core.entities.sdp_data import SDPEntity
 from infrastructure.s3.s3_video_storage import S3VideoStorage
 from core.logger import get_logger
-from core.entities.streaming_video_data import StreamingVideoData, VideoMetaData
+from core.entities.streaming_video import VideoMetaEntity
 from core.engine.live_streaming_session_status import LiveStreamingSessionStatus
 from services.streaming_session_lifecycle_service import StreamingSessionLifecycleService
 
@@ -25,22 +23,26 @@ class StreamingRuntimeService:
         self._streaming_session_manager = streaming_session_manager
         self._s3_video_storage = s3_video_storage
 
-    async def offer(self, streaming_session_id: UUID, sdp_data: SDPData) -> SDPData:
-        _, streaming_session_data  = await self._streaming_session_lifecycle_service.read_session(streaming_session_id)
-        user_id = streaming_session_data.user_id
+    async def offer(self, streaming_session_id: UUID, sdp_data: SDPEntity) -> SDPEntity:
+        streaming_session_entity = await self._streaming_session_lifecycle_service.read_session(streaming_session_id)
+        user_id = streaming_session_entity.user_id
         logger.info(f"session: {streaming_session_id} - authorized user {user_id} starting stream")
 
-        await self._streaming_session_manager.create_streaming_session(streaming_session_id=streaming_session_id,
-                                                                      on_streaming_session_started=self._started_update,
-                                                                      on_streaming_session_finished=self._finished_update)
+        await self._streaming_session_manager.create_streaming_session(
+            streaming_session_id=streaming_session_id,
+            on_streaming_session_started=self._started_update,
+            on_streaming_session_finished=self._finished_update
+        )
 
-        sdp_data_answer = await (self._streaming_session_manager
-                                 .start_streaming_session(streaming_session_id=streaming_session_id, sdp_data=sdp_data))
+        sdp_data_answer = await self._streaming_session_manager.start_streaming_session(
+            streaming_session_id=streaming_session_id,
+            sdp_data=sdp_data
+        )
 
         return sdp_data_answer
 
     async def stop(self, streaming_session_id: UUID) -> dict:
-        logger.info(f"session: {streaming_session_id} - type{type(streaming_session_id)}")
+        logger.info(f"session: {streaming_session_id} - type {type(streaming_session_id)}")
         try:
             await self._streaming_session_manager.dispose_streaming_session(streaming_session_id=streaming_session_id)
         except Exception as e:
@@ -54,42 +56,33 @@ class StreamingRuntimeService:
             "message": f"Stream session {streaming_session_id} stopped"
         }
 
-    async def _started_update(self, streaming_session_id: UUID, started_at: datetime):
-        streaming_session_data = StreamingSessionData(status=LiveStreamingSessionStatus.RUNNING, started_at=started_at)
-        await self._streaming_session_lifecycle_service.update_session(streaming_session_id=streaming_session_id,
-                                                                       streaming_session_data=streaming_session_data)
-
+    async def _started_update(self, streaming_session_id: UUID, started_at: datetime) -> None:
+        await self._streaming_session_lifecycle_service.update_session(
+            streaming_session_id=streaming_session_id,
+            status=LiveStreamingSessionStatus.RUNNING,
+            started_at=started_at
+        )
+    #TODO типизация в колбэках
     async def _finished_update(self,
                                streaming_session_id: UUID,
                                finished_at: datetime,
                                file_path: str,
-                               file_name: str,
-                               video_meta: VideoMetaData):
+                               video_meta: VideoMetaEntity):
         logger.info(f"session: {streaming_session_id} - saving results...")
-        s3_key=None
+
+        s3_key = await self._s3_video_storage.upload_multipart(
+            file_path=file_path,
+            streaming_session_id=streaming_session_id)
 
 
-        try:
-            logger.info(f"session: {streaming_session_id} - loading {file_path} → {file_name}")
-            s3_key = await self._s3_video_storage.upload_multipart(file_path=file_path, object_name=file_name)
-            #TODO говорит все успешно хотя загрузки небыло
-            logger.info(f"session: {streaming_session_id} - the video has been successfully uploaded to S3: {file_name}")
-        except Exception as e:
-            logger.error(f"session: {streaming_session_id} - error to save video to s3: {e}")
-
-
-
-        streaming_video_data = StreamingVideoData(
-            s3_key=s3_key,
-            s3_bucket=self._s3_video_storage.bucket_name,
-            created_at=datetime.now(timezone.utc),
-            meta=video_meta
+        await self._streaming_session_lifecycle_service.update_session(
+            streaming_session_id=streaming_session_id,
+            status=LiveStreamingSessionStatus.FINISHED,
+            ended_at=finished_at,
         )
 
-        streaming_session_data = StreamingSessionData(status=LiveStreamingSessionStatus.FINISHED,
-                                                      ended_at=finished_at)
-
-        await self._streaming_session_lifecycle_service.update_session(streaming_session_id=streaming_session_id,
-                                                                       streaming_session_data=streaming_session_data)
-        await self._streaming_session_lifecycle_service.attached_session_video(streaming_session_id=streaming_session_id,
-                                                                               streaming_video_data=streaming_video_data)
+        await self._streaming_session_lifecycle_service.attach_video_to_session(
+            streaming_session_id=streaming_session_id,
+            s3_key=s3_key,
+            video_meta=video_meta
+        )

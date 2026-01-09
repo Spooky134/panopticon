@@ -7,19 +7,18 @@ import queue
 from fractions import Fraction
 
 from core.logger import get_logger
-from core.entities.streaming_video_data import VideoMetaData
-
+from core.entities.streaming_video import VideoMetaEntity
 
 logger = get_logger(__name__)
 
 
 class FrameCollector:
-    def __init__(self, session_id: UUID):
-        self._session_id = session_id
+    def __init__(self, streaming_session_id: UUID):
+        self._streaming_session_id = streaming_session_id
 
         self._temp_dir = f"/tmp/collected_data/"
         os.makedirs(self._temp_dir, exist_ok=True)
-        self._file_name = f"{self._session_id}.mp4"
+        self._file_name = f"{self._streaming_session_id}.mp4"
         self._output_file_path = os.path.join(self._temp_dir, self._file_name)
 
         self.FPS = 30
@@ -64,17 +63,17 @@ class FrameCollector:
             # frame_copy = frame.reformat(format=frame.format)
             self._queue.put_nowait(frame)
         except queue.Full:
-            logger.warning(f"session: {self._session_id} - drop recording frame (queue full)")
+            logger.warning(f"session: {self._streaming_session_id} - drop recording frame (queue full)")
         except Exception as e:
-            logger.error(f"session: {self._session_id} - error queuing frame: {e}")
+            logger.error(f"session: {self._streaming_session_id} - error queuing frame: {e}")
 
     def _recording_worker(self):
-        logger.info(f"session: {self._session_id} - recording thread started")
+        logger.info(f"session: {self._streaming_session_id} - recording thread started")
 
         try:
             self._container = av.open(self._output_file_path, mode="w")
         except Exception as e:
-            logger.error(f"session: {self._session_id} - failed to open file: {e}")
+            logger.error(f"session: {self._streaming_session_id} - failed to open file: {e}")
             return
 
         while self._running or not self._queue.empty():
@@ -100,7 +99,7 @@ class FrameCollector:
                     self._container.mux(packet)
 
             except Exception as e:
-                logger.error(f"session: {self._session_id} - encode error: {e}")
+                logger.error(f"session: {self._streaming_session_id} - encode error: {e}")
             finally:
                 self._queue.task_done()
 
@@ -109,58 +108,56 @@ class FrameCollector:
                 for packet in self._stream.encode():
                     self._container.mux(packet)
             except Exception as e:
-                logger.error(f"session: {self._session_id} - final encode error: {e}")
+                logger.error(f"session: {self._streaming_session_id} - final encode error: {e}")
 
         if self._container is not None:
             self._container.close()
-            logger.info(f"session: {self._session_id} - container closed")
+            logger.info(f"session: {self._streaming_session_id} - container closed")
 
-    async def finalize(self) -> Tuple[str, str, VideoMetaData]:
-        logger.info(f"session: {self._session_id} - finalizing video data to {self._output_file_path}")
+    async def finalize(self) -> Tuple[str, VideoMetaEntity]:
+        logger.info(f"session: {self._streaming_session_id} - finalizing video data to {self._output_file_path}")
 
         self._running = False
 
         if self._worker_thread.is_alive():
             self._worker_thread.join(timeout=5.0)
-            logger.info(f"session: {self._session_id} - recording thread stopped")
+            logger.info(f"session: {self._streaming_session_id} - recording thread stopped")
 
         try:
-            logger.info(f"session: {self._session_id} - getting metadata...")
+            logger.info(f"session: {self._streaming_session_id} - getting metadata...")
             self._metadata = await self.get_metadata()
         except Exception as e:
-            logger.error(f"session: {self._session_id} - error getting metadata: {e}")
+            logger.error(f"session: {self._streaming_session_id} - error getting metadata: {e}")
             self._metadata = None
 
-        return self._output_file_path, self._file_name, self._metadata
-
+        return self._output_file_path, self._metadata
 
     async def cleanup(self):
-        logger.info(f"session: {self._session_id} - collector cleaning up")
+        logger.info(f"session: {self._streaming_session_id} - collector cleaning up")
         try:
             if os.path.exists(self._output_file_path):
                 os.remove(self._output_file_path)
-            logger.info(f"session: {self._session_id} - temporary file removed")
+            logger.info(f"session: {self._streaming_session_id} - temporary file removed")
         except Exception as e:
-            logger.error(f"session: {self._session_id} - error removing temporary file: {e}")
+            logger.error(f"session: {self._streaming_session_id} - error removing temporary file: {e}")
 
-
-    async def get_metadata(self) -> VideoMetaData:
+    async def get_metadata(self) -> VideoMetaEntity:
         if self._metadata:
             return self._metadata
 
         if not os.path.exists(self._output_file_path):
-            logger.warning(f"session: {self._session_id} - no metadata file found, creating new one")
+            logger.warning(f"session: {self._streaming_session_id} - no metadata file found, creating new one")
             return None
 
         try:
             container = av.open(self._output_file_path, mode="r")
         except Exception as e:
-            logger.error(f"session: {self._session_id} - failed to open video for metadata: {e}")
+            logger.error(f"session: {self._streaming_session_id} - failed to open video for metadata: {e}")
             return None
         video_stream = next((s for s in container.streams if s.type == "video"), None)
 
         if not video_stream:
-            logger.error(f"session: {self._session_id} - no video stream found in file")
+            logger.error(f"session: {self._streaming_session_id} - no video stream found in file")
             return None
 
         if video_stream.duration is not None and video_stream.time_base is not None:
@@ -178,15 +175,15 @@ class FrameCollector:
         else:
             avg_fps = None
 
-        self._metadata=VideoMetaData(file_size=file_size,
-                                     duration=duration,
-                                     width=video_stream.codec_context.width,
-                                     height=video_stream.codec_context.height,
-                                     codec=video_stream.codec_context.name,
-                                     frame_count=video_stream.frames if video_stream.frames else None,
-                                     fps=avg_fps,
-                                     bit_rate=video_stream.bit_rate if video_stream.bit_rate else None,
-                                     mime_type=self.MIME_TYPE)
+        self._metadata = VideoMetaEntity(file_size=file_size,
+                                         duration=duration,
+                                         width=video_stream.codec_context.width,
+                                         height=video_stream.codec_context.height,
+                                         codec=video_stream.codec_context.name,
+                                         frame_count=video_stream.frames if video_stream.frames else None,
+                                         fps=avg_fps,
+                                         bit_rate=video_stream.bit_rate if video_stream.bit_rate else None,
+                                         mime_type=self.MIME_TYPE)
 
         container.close()
 

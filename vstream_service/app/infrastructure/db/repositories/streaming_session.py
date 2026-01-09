@@ -1,12 +1,13 @@
 from typing import Optional
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.orm import joinedload
-from infrastructure.db.models import StreamingSession
 from core.logger import get_logger
 from uuid import UUID
-from core.entities.streaming_session_data import StreamingSessionData
 from dataclasses import asdict
+
+from core.entities.streaming_session import StreamingSessionEntity
+from infrastructure.db.models import StreamingSessionModel
 
 
 logger = get_logger(__name__)
@@ -16,17 +17,17 @@ class StreamingSessionRepository:
     def __init__(self, db: AsyncSession):
         self.db = db
 
-    async def get(self, streaming_session_id: UUID) -> Optional[StreamingSession]:
+    async def get(self, streaming_session_id: UUID) -> Optional[StreamingSessionEntity]:
         result = await self.db.execute(
-            select(StreamingSession).
-            options(joinedload(StreamingSession.video)).
-            where(StreamingSession.id == streaming_session_id))
-        return result.scalar_one_or_none()
+            select(StreamingSessionModel).
+            options(joinedload(StreamingSessionModel.video)).
+            where(StreamingSessionModel.id == streaming_session_id))
+        model = result.scalar_one_or_none()
+        return StreamingSessionEntity.from_db(model)
 
-
-    async def create(self, streaming_session_data: StreamingSessionData) -> Optional[StreamingSession]:
-        data_dict = asdict(streaming_session_data)
-        new_streaming_session = StreamingSession(**data_dict)
+    async def create(self, streaming_session_entity: StreamingSessionEntity) -> Optional[StreamingSessionEntity]:
+        data_dict = asdict(streaming_session_entity)
+        new_streaming_session = StreamingSessionModel(**data_dict)
 
         self.db.add(new_streaming_session)
         await self.db.commit()
@@ -34,25 +35,19 @@ class StreamingSessionRepository:
 
         return await self.get(streaming_session_id=new_streaming_session.id)
 
-    async def update(self, streaming_session_id: UUID, streaming_session_data: StreamingSessionData) -> Optional[StreamingSession]:
-        streaming_session = await self.get(streaming_session_id=streaming_session_id)
-        if not streaming_session:
-            logger.warning(f"testing_session: {streaming_session_id} -  Not found in DB.")
-            return None
+    async def update(self, streaming_session_entity: StreamingSessionEntity) -> Optional[StreamingSessionEntity]:
+        entity_data = asdict(streaming_session_entity)
+        # TODO id тоже перезаписывается?
+        await self.db.execute(
+            update(StreamingSessionModel)
+            .where(StreamingSessionModel.id == streaming_session_entity.id)
+            .values(**entity_data)
+        )
 
-        streaming_session_data_dict = asdict(streaming_session_data)
-        for field, value in streaming_session_data_dict.items():
-            if value is not None:
-                setattr(streaming_session, field, value)
-
-        # session.ended_at = data.get("ended_at", session.ended_at)
-        # session.started_at = data.get("started_at", session.started_at)
-        # session.status = data.get("status", session.status)
-        # session.meta = data.get("meta", session.meta)
-        # session.ml_metrics = data.get("ml_metrics", session.ml_metrics)
-
-        # streaming_session.time_update = datetime.now(timezone.utc)
         await self.db.commit()
 
-        logger.info(f"testing_session: {streaming_session_id} - Updated")
-        return await self.get(streaming_session_id=streaming_session_id)
+        logger.info(f"session: {streaming_session_entity.id} - updated")
+        return await self.get(streaming_session_id=streaming_session_entity.id)
+
+    async def delete(self, streaming_session_id: UUID) -> Optional[StreamingSessionEntity]:
+        ...

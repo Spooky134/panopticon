@@ -1,8 +1,8 @@
-from .streaming_session import StreamingSession
-from .streaming_video import StreamingVideo
+from .streaming_session import StreamingSessionModel
+from .streaming_video import StreamingVideoModel
 
 
 __all__ = [
-    "StreamingVideo",
-    "StreamingSession",
+    "StreamingVideoModel",
+    "StreamingSessionModel",
 ]

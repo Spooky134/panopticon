@@ -10,7 +10,7 @@ import uuid
 from core.database import Base
 
 
-class StreamingSession(Base):
+class StreamingSessionModel(Base):
     __tablename__ = "streaming_sessions"
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
@@ -25,7 +25,7 @@ class StreamingSession(Base):
     # incidents = Column(JSONB)
     # ml_metrics = Column(JSONB)
     # meta = Column(JSONB)
-    video = relationship("StreamingVideo", back_populates="streaming_session", uselist=False)
+    video = relationship("StreamingVideoModel", back_populates="streaming_session", uselist=False)
 
     __table_args__ = (
         Index("idx_streaming_session_user_id", "user_id"),

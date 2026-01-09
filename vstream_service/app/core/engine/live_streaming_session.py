@@ -5,8 +5,8 @@ from typing import Callable, Awaitable, Optional, Tuple
 from aiortc import RTCSessionDescription, RTCPeerConnection
 from uuid import UUID
 
-from core.entities.sdp_data import SDPData
-from core.entities.streaming_video_data import VideoMetaData
+from core.entities.sdp_data import SDPEntity
+from core.entities.streaming_video import VideoMetaEntity
 from core.logger import get_logger
 from infrastructure.video.frame_collector import FrameCollector
 from infrastructure.grpc_client.video_processor import VideoProcessor
@@ -69,7 +69,7 @@ class LiveStreamingSession:
             self._peer_connection.addTrack(transformed)
 
 
-    async def start(self, sdp_data: SDPData) -> SDPData:
+    async def start(self, sdp_data: SDPEntity) -> SDPEntity:
         logger.info(f"session: {self._id} - starting...")
         await self._grpc_processor.start()
 
@@ -84,23 +84,25 @@ class LiveStreamingSession:
         self._started_at = datetime.now(timezone.utc)
         logger.info(f"session: {self._id} - started")
 
-        return SDPData(sdp=self._peer_connection.localDescription.sdp,
-                       type=self._peer_connection.localDescription.type)
+        return SDPEntity(
+            sdp=self._peer_connection.localDescription.sdp,
+            type=self._peer_connection.localDescription.type
+        )
 
 
-    async def finalize(self) -> Tuple[Optional[str], Optional[str], Optional[VideoMetaData]]:
+    async def finalize(self) -> Tuple[Optional[str], Optional[VideoMetaEntity]]:
         self._finished_at = datetime.now(timezone.utc)
 
-        video_file_path, video_file_name, video_meta = None, None, None
+        video_file_path, video_meta = None, None
 
         try:
             logger.info(f"session: {self._id} - finalizing session resources...")
-            video_file_path, video_file_name, video_meta = await self._collector.finalize()
+            video_file_path, video_meta = await self._collector.finalize()
         except Exception as e:
             logger.error(f"session: {self._id} - finalize error: {e}")
 
 
-        return video_file_path, video_file_name, video_meta
+        return video_file_path, video_meta
 
 
     async def shutdown(self):

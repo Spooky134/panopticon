@@ -7,17 +7,17 @@ import uuid
 from core.database import Base
 
 
-class StreamingVideo(Base):
+class StreamingVideoModel(Base):
     __tablename__ = "streaming_videos"
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     s3_key: Mapped[str] = mapped_column(String(500))
-    s3_bucket: Mapped[str] = mapped_column(String(255))
+    # s3_bucket: Mapped[str] = mapped_column(String(255))
 
-    duration: Mapped[int] = mapped_column(Integer, nullable=True)
-    fps: Mapped[float] = mapped_column(Float, nullable=True)
     width: Mapped[int] = mapped_column(Integer, nullable=True)
     height: Mapped[int] = mapped_column(Integer, nullable=True)
+    duration: Mapped[int] = mapped_column(Integer, nullable=True)
+    fps: Mapped[float] = mapped_column(Float, nullable=True)
     file_size: Mapped[int] = mapped_column(Integer, nullable=True)
     mime_type: Mapped[str] = mapped_column(String(100), default="video/mp4", nullable=True)
     meta: Mapped[dict] = mapped_column(JSONB, nullable=True)
@@ -25,7 +25,7 @@ class StreamingVideo(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     streaming_session_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("streaming_sessions.id"), unique=True)
 
-    streaming_session = relationship("StreamingSession", back_populates="video")
+    streaming_session = relationship("StreamingSessionModel", back_populates="video")
 
     __table_args__ = (
         Index("idx_streaming_video_s3_key", "s3_key"),

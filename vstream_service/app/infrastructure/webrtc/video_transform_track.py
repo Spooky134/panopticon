@@ -34,7 +34,7 @@ class VideoTransformTrack(VideoStreamTrack):
                 # frame_for_save = frame.reformat(format=frame.format)
                 asyncio.create_task(self._collector.add_frame(frame_copy))
             except Exception as e:
-                logger.error(f"session: {self._collector._session_id} - error adding frame to collector: {e}")
+                logger.error(f"session: {self._collector._streaming_session_id} - error adding frame to collector: {e}")
 
         return frame
 

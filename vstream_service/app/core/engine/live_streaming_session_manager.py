@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from core.entities.sdp_data import SDPData
+from core.entities.sdp_data import SDPEntity
 from infrastructure.video.frame_collector_factory import FrameCollectorFactory
 from core.engine.live_streaming_session import LiveStreamingSession
 from infrastructure.grpc_client.video_processor_factory import VideoProcessorFactory
@@ -36,7 +36,7 @@ class LiveStreamingSessionManager:
                                        on_streaming_session_started=None,
                                        on_streaming_session_finished=None) -> UUID:
         if len(self._streaming_sessions) >= self._max_sessions:
-            raise Exception("Server busy: too many active sessions")
+            raise Exception("server busy: too many active sessions")
 
         self._on_streaming_session_started = on_streaming_session_started
         self._on_streaming_session_finished = on_streaming_session_finished
@@ -59,7 +59,7 @@ class LiveStreamingSessionManager:
 
         return streaming_session_id
 
-    async def start_streaming_session(self, streaming_session_id: UUID, sdp_data: SDPData) -> SDPData:
+    async def start_streaming_session(self, streaming_session_id: UUID, sdp_data: SDPEntity) -> SDPEntity:
         session: LiveStreamingSession = await self.get_streaming_session(streaming_session_id)
         if session is None:
             raise ValueError("session not found")
@@ -74,15 +74,14 @@ class LiveStreamingSessionManager:
     async def dispose_streaming_session(self, streaming_session_id: UUID):
         logger.info(f"session: {streaming_session_id} - cleaning up")
         session = self._streaming_sessions.pop(streaming_session_id, None)
-        video_file_path, video_file_name, video_meta = await session.finalize()
+        video_file_path, video_meta = await session.finalize()
         try:
             await self._on_streaming_session_finished(streaming_session_id=streaming_session_id,
                                                       finished_at=session.finished_at,
                                                       file_path=video_file_path,
-                                                      file_name=video_file_name,
                                                       video_meta=video_meta)
         except Exception as e:
-            logger.error(f"session: {streaming_session_id} - on_finished callback error: {e}")
+            logger.error(f"session: {streaming_session_id} - _on_streaming_session_finished callback error: {e}")
 
 
         if session:
