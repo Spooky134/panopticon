@@ -14,6 +14,7 @@ from infrastructure.webrtc.video_transform_track import VideoTransformTrack
 
 logger = get_logger(__name__)
 
+# TODO неправильно работатают события trackrecived появляется когда еще кандидаты cheecking
 class LiveStreamingSession:
     def __init__(self,
                  session_id: UUID,
@@ -50,7 +51,7 @@ class LiveStreamingSession:
     async def _on_ice_state_change(self):
         state = self._peer_connection.iceConnectionState
         logger.info(f"session: {self._ID} - ICE state → {state}")
-
+        # TODO стартовать только если состаяние completed
         if state in ["failed", "closed", "disconnected"]:
             # logger.info(f"session: {self._ID} - ICE state → {state}")
             if self._on_disconnect:

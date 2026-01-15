@@ -1,0 +1,118 @@
+syntax = "proto3";
+
+package vstream_ml_model.ml_worker;
+
+// Общие вспомогательные структуры
+message Range {
+    float min = 1;
+    float max = 2;
+}
+
+// Трёхмерный вектор
+message Vector3 {
+    float x = 1; // Пример: yaw / x = 2.5
+    float y = 2; // Пример: pitch / y = -1.2
+    float z = 3; // Пример: roll / z = 0.4
+}
+
+// Метаданные входного кадра
+message FrameMetadata {
+    uint64 sequence_number = 1; // Порядковый номер кадра в потоке
+    uint64 timestamp_ms = 2; // Временная метка получения кадра на стороне VStream (мс)
+    bool is_calibration = 3; // Признак: кадр относится к калибровочной сессии
+    float client_fps = 4; // FPS, заявленный клиентом
+    float exposure_level = 5; // Оценка освещённости (нормализованная) // Пример: 0.65
+    float blur_score = 6; // Уровень размытия изображения Пример: 0.18
+    string camera_position = 7; // Положение камеры относительно пользователя Пример: "frontal", "angled_left"
+    string device_id = 8; // Идентификатор устройства или браузера
+}
+
+// Аннотации для отображения на кадре
+message AnnotationBox {
+    string label = 1; // Тип объекта или области Пример: "face", "screen_area"
+    int32 x = 2; // Координаты прямоугольника
+    int32 y = 3;
+    int32 width = 4;
+    int32 height = 5;
+    string note = 6; // Дополнительный комментарий (опционально) Пример: "primary_face"
+}
+
+// Инциденты
+message Incident {
+    string type = 1; // Пример: "multiple_faces", "face_missing"
+    uint64 timestamp_ms = 2; // Временная метка события
+    string severity = 3; // Пример: "low", "medium", "high"
+}
+
+// Калибровочный профиль
+message CalibrationProfile {
+    // -------- Метаданные --------
+    string session_id = 1; // Идентификатор сессии экзамена
+    string calibration_id = 2; // Идентификатор калибровочной сессии
+    uint64 created_at_ms = 3; // Время формирования профиля (мс)  
+    int32 frame_count = 4; // Количество использованных кадров
+    bool is_valid = 5; // Признак валидности профиля
+    string profile_version = 6; // Версия алгоритма формирования
+
+    // -------- Параметры изображения --------
+    float avg_brightness = 7; // Пример: 0.62
+    Range brightness_range = 8; // Диапазон допустимой яркости
+    float avg_contrast = 9; // Средняя контрастность
+    float avg_blur = 10; // Средний уровень размытия
+    Range blur_range = 11; // Допустимый диапазон размытия
+    float lighting_stability = 12; // Стабильность освещения (0..1)
+    float estimated_fps = 13; // Оценка реального FPS
+
+    // -------- Геометрия пользователя --------
+    Vector3 head_pose_mean = 14; // Среднее положение головы
+    Range head_yaw_range = 15; // Допустимые отклонения
+    Range head_pitch_range = 16;
+    Range head_roll_range = 17;
+
+    // -------- Дополнительные агрегаты --------
+    float face_box_average_size = 18; // Средний размер bbox лица пример: 0.18 (доля кадра)
+    float face_box_variation = 19; // Вариация размера bbox лица  
+    map<string, float> extra_metrics = 20; // Дополнительные вычисленные метрики
+}
+
+// Пакет кадров для калибровки
+message CalibrationBatch {
+    string session_id = 1;
+    string calibration_id = 2;
+    repeated FrameRequest frames = 3;
+}
+
+// Запросы
+message FrameRequest {
+    string session_id = 1; // идентификатор сессии экзамена
+    string calibration_id = 2; // идентификатор калибровочной сессии
+    bytes frame_data = 3; // jpeg-кадр
+    int32 width = 4;
+    int32 height = 5;
+    int32 channels = 6; //три канала для rgb
+    int64 ts = 7; //временная метка
+    FrameMetadata metadata = 8; // метаданные кадра
+}
+
+// Ответы
+message FrameResponse {
+  repeated AnnotationBox annotations = 2; // Аннотации для отображения
+  repeated Incident incidents = 3; // Зафиксированные инциденты
+  string comment = 4; // Служебный комментарий
+  float processing_latency_ms = 5; // Время обработки кадра (мс)
+}
+
+// Ответ после завершения калибровки
+message CalibrationResponse {
+  CalibrationProfile profile = 1;
+}
+
+// gRPC сервис
+service MLService {
+  rpc StreamFrames(stream FrameRequest) // Потоковый режим: кадры ↔ результаты
+      returns (stream FrameResponse);
+
+  rpc SendCalibration(CalibrationBatch) // Калибровка: пакет кадров → профиль
+      returns (CalibrationResponse);
+}
+
