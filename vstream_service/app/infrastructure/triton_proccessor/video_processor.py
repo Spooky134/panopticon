@@ -52,7 +52,6 @@ class VideoProcessor:
 
         resized = cv2.resize(img, (self._input_w, self._input_h))
 
-        # enqueue (drop old if needed)
         if self._queue.full():
             try:
                 self._queue.get_nowait()

@@ -25,9 +25,3 @@ message FrameResponse {
   int64 ts = 7;
   repeated BoundingBox boxes = 8;
 }
-
-// обработка стриминг
-service MLService {
-  rpc StreamFrames(stream FrameRequest) returns (stream FrameResponse);
-}
-
