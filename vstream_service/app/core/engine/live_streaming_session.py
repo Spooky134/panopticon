@@ -8,7 +8,7 @@ from core.entities.sdp_data import SDPEntity
 from core.entities.streaming_video import VideoMetaEntity
 from core.logger import get_logger
 from infrastructure.video.frame_collector import FrameCollector
-from infrastructure.grpc_client.video_processor import VideoProcessor
+from infrastructure.triton_proccessor.video_processor import VideoProcessor
 from infrastructure.webrtc.video_transform_track import VideoTransformTrack
 
 

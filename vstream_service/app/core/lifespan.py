@@ -8,7 +8,6 @@ from core.engine.live_streaming_session_manager import LiveStreamingSessionManag
 from infrastructure.s3.s3_video_storage_factory import create_s3_video_storage
 from infrastructure.video.frame_collector_factory import FrameCollectorFactory
 from infrastructure.webrtc.connection_factory import ConnectionFactory
-# from infrastructure.grpc_client.video_processor_factory import VideoProcessorFactory
 from infrastructure.triton_proccessor.video_processor_factory import VideoProcessorFactory
 from core.events import EventManager
 from config import settings

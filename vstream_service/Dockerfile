@@ -19,11 +19,3 @@ COPY vstream_service/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY vstream_service/app/ .
-
-COPY proto .
-
-RUN python -m grpc_tools.protoc \
-    --proto_path=. \
-    --python_out=. \
-    --grpc_python_out=. \
-    ml_worker.proto

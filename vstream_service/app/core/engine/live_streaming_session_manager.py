@@ -4,7 +4,7 @@ from uuid import UUID
 from core.entities.sdp_data import SDPEntity
 from infrastructure.video.frame_collector_factory import FrameCollectorFactory
 from core.engine.live_streaming_session import LiveStreamingSession
-from infrastructure.grpc_client.video_processor_factory import VideoProcessorFactory
+from infrastructure.triton_proccessor.video_processor_factory import VideoProcessorFactory
 from functools import partial
 
 from core.logger import get_logger
