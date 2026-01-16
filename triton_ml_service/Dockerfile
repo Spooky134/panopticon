@@ -28,6 +28,15 @@ COPY triton_ml_service/requirements.txt /tmp/requirements.txt
 
 RUN pip3 install --no-cache-dir -r /tmp/requirements.txt
 
+COPY proto/ /app/proto/
+
+RUN mkdir -p /app/generated && \
+    python3 -m grpc_tools.protoc \
+        -I/app/proto \
+        --python_out=/app/generated \
+        --grpc_python_out=/app/generated \
+        /app/proto/ml_worker.proto
+
 
 WORKDIR /opt/tritonserver
 

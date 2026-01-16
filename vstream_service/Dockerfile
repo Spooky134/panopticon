@@ -19,3 +19,20 @@ COPY vstream_service/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY vstream_service/app/ .
+
+
+COPY proto/ /app/proto/
+
+RUN mkdir -p /app/generated && \
+    python3 -m grpc_tools.protoc \
+        -I/app/proto \
+        --python_out=/app/generated \
+        --grpc_python_out=/app/generated \
+        /app/proto/ml_worker.proto
+#COPY proto .
+# Создаем protobuf файлы (если они еще не сгенерированы)
+#RUN python -m grpc_tools.protoc \
+#    --proto_path=. \
+#    --python_out=. \
+#    --grpc_python_out=. \
+#    ml_worker.proto

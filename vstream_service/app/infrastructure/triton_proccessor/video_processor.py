@@ -18,7 +18,7 @@ class VideoProcessor:
         self,
         triton_client: triton_grpc.InferenceServerClient,
         session_id: UUID,
-        model_name: str = "proctoring_ml_model",
+        model_name: str = "monitoring_pipeline",
         input_size=(640, 480),
     ):
         self._session_id = str(session_id)
@@ -90,42 +90,45 @@ class VideoProcessor:
 
                 inputs = []
 
-                inp = InferInput("session_id", [1, 1], "BYTES")
+                inp = InferInput("session_id_input", [1, 1], "BYTES")
                 inp.set_data_from_numpy(
                     np.array([[self._session_id.encode("utf-8")]], dtype=object)
                 )
                 inputs.append(inp)
 
-                inp = InferInput("frame_data", [1, img.size], "UINT8")
+                inp = InferInput("frame_data_input", [1, img.size], "UINT8")
                 inp.set_data_from_numpy(img.flatten().reshape(1, -1))
                 inputs.append(inp)
 
-                inp = InferInput("width", [1, 1], "INT32")
+                inp = InferInput("width_input", [1, 1], "INT32")
                 inp.set_data_from_numpy(
                     np.array([[self._input_w]], dtype=np.int32)
                 )
                 inputs.append(inp)
 
-                inp = InferInput("height", [1, 1], "INT32")
+                inp = InferInput("height_input", [1, 1], "INT32")
                 inp.set_data_from_numpy(
                     np.array([[self._input_h]], dtype=np.int32)
                 )
                 inputs.append(inp)
 
-                inp = InferInput("channels", [1, 1], "INT32")
+                inp = InferInput("channels_input", [1, 1], "INT32")
                 inp.set_data_from_numpy(
                     np.array([[3]], dtype=np.int32)
                 )
                 inputs.append(inp)
 
-                inp = InferInput("ts", [1, 1], "INT64")
+                inp = InferInput("ts_input", [1, 1], "INT64")
                 inp.set_data_from_numpy(
                     np.array([[ts]], dtype=np.int64)
                 )
                 inputs.append(inp)
 
                 outputs = [
-                    InferRequestedOutput("boxes"),
+                    InferRequestedOutput("session_id_output"),
+                    InferRequestedOutput("comment_output"),
+                    InferRequestedOutput("ts_output"),
+                    InferRequestedOutput("boxes_output"),
                 ]
 
                 result = await self._client.infer(
@@ -133,7 +136,7 @@ class VideoProcessor:
                     inputs=inputs,
                     outputs=outputs,
                 )
-                res_boxes = result.as_numpy("boxes")
+                res_boxes = result.as_numpy("boxes_output")
                 if res_boxes is not None:
                     self._latest_boxes = res_boxes[0]
 

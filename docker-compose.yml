@@ -108,7 +108,7 @@ services:
     #         - driver: nvidia
     #           count: all
     #           capabilities: [gpu]
-    command: ["tritonserver", "--model-repository=/models", "--log-info=false"]
+    command: ["tritonserver", "--model-repository=/models", "--log-info=true", "--exit-on-error=false"]
     networks:
       - mainnet
     restart: unless-stopped
