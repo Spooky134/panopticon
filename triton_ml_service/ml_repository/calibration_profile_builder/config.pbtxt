@@ -1,4 +1,4 @@
-name: "proctoring_ml_model"
+name: "calibration_profile_builder"
 backend: "python"
 max_batch_size: 8  # Позволяет Тритону склеивать до 8 кадров от разных людей в одну пачку
 

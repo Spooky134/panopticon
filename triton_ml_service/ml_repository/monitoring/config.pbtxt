@@ -1,0 +1,33 @@
+name: "monitoring"
+backend: "python"
+max_batch_size: 0
+
+
+input [
+  {
+    name: "raw_input"
+    data_type: TYPE_UINT8
+    dims: [ -1 ]
+  }
+]
+
+output [
+  {
+    name: "raw_output"
+    data_type: TYPE_UINT8
+    dims: [ -1 ]
+  }
+]
+
+
+instance_group [
+  {
+    count: 1
+    kind: KIND_CPU
+  }
+]
+
+# ОПТИМИЗАЦИЯ РЕАЛТАЙМА
+dynamic_batching {
+  max_queue_delay_microseconds: 5000
+}

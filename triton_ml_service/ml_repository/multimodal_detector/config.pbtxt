@@ -1,8 +1,8 @@
 name: "multimodal_detector"
 backend: "python"
-max_batch_size: 8  # Позволяет Тритону склеивать до 8 кадров от разных людей в одну пачку
+max_batch_size: 0
 
-# ВХОДНЫЕ ДАННЫЕ (должны совпадать с именами в твоем model.py)
+
 input [
   {
     name: "session_id"
@@ -12,7 +12,7 @@ input [
   {
     name: "frame_data"
     data_type: TYPE_UINT8
-    dims: [ -1 ] # Плоский массив байт (raw bytes из твоего proto)
+    dims: [ -1 ]
   },
   {
     name: "width"
@@ -36,7 +36,7 @@ input [
   }
 ]
 
-# ВЫХОДНЫЕ ДАННЫЕ
+
 output [
   {
     name: "session_id"
@@ -56,19 +56,19 @@ output [
   {
     name: "boxes"
     data_type: TYPE_INT32
-    dims: [ -1, 4 ] # Список BoundingBox. -1 значит "любое количество найденных лиц"
+    dims: [ -1, 4 ]
   }
 ]
 
 
 instance_group [
   {
-    count: 1          # Сколько копий модели запустить (для CPU 1-2 обычно за глаза)
+    count: 1          
     kind: KIND_CPU
   }
 ]
 
 # ОПТИМИЗАЦИЯ РЕАЛТАЙМА
 dynamic_batching {
-  max_queue_delay_microseconds: 5000 # Ждать 5мс, чтобы добрать кадры от других сессий
+  max_queue_delay_microseconds: 5000 
 }

@@ -1,9 +1,12 @@
+import sys
+
 import av
 import cv2
 import numpy as np
 import asyncio
 import time
 from uuid import UUID
+import sys
 
 import tritonclient.grpc.aio as triton_grpc
 from tritonclient.grpc import InferInput, InferRequestedOutput
@@ -12,13 +15,16 @@ from core.logger import get_logger
 
 logger = get_logger(__name__)
 
+sys.path.append('/app/generated')
+
+import ml_worker_pb2
 
 class VideoProcessor:
     def __init__(
         self,
         triton_client: triton_grpc.InferenceServerClient,
         session_id: UUID,
-        model_name: str = "monitoring_pipeline",
+        model_name: str = "monitoring",
         input_size=(640, 480),
     ):
         self._session_id = str(session_id)
@@ -64,11 +70,11 @@ class VideoProcessor:
             pass
 
         if self._latest_boxes is not None:
-            for x, y, w, h in self._latest_boxes:
-                x = int(x * orig_w / self._input_w)
-                y = int(y * orig_h / self._input_h)
-                w = int(w * orig_w / self._input_w)
-                h = int(h * orig_h / self._input_h)
+            for box in self._latest_boxes:
+                x = int(box.x * orig_w / self._input_w)
+                y = int(box.y * orig_h / self._input_h)
+                w = int(box.width * orig_w / self._input_w)
+                h = int(box.height * orig_h / self._input_h)
 
                 cv2.rectangle(
                     img,
@@ -88,57 +94,34 @@ class VideoProcessor:
             while True:
                 img, ts = await self._queue.get()
 
-                inputs = []
+                frame_request = ml_worker_pb2.FrameRequest()
+                frame_request.session_id = str(self._session_id)
+                frame_request.frame_data = img.tobytes()
+                frame_request.width = self._input_w
+                frame_request.height = self._input_h
+                frame_request.channels = 3
+                frame_request.ts=ts
 
-                inp = InferInput("session_id_input", [1, 1], "BYTES")
-                inp.set_data_from_numpy(
-                    np.array([[self._session_id.encode("utf-8")]], dtype=object)
-                )
-                inputs.append(inp)
+                request_bytes = frame_request.SerializeToString()
 
-                inp = InferInput("frame_data_input", [1, img.size], "UINT8")
-                inp.set_data_from_numpy(img.flatten().reshape(1, -1))
-                inputs.append(inp)
+                tensor_data = np.array(list(request_bytes), dtype=np.uint8)
 
-                inp = InferInput("width_input", [1, 1], "INT32")
-                inp.set_data_from_numpy(
-                    np.array([[self._input_w]], dtype=np.int32)
-                )
-                inputs.append(inp)
+                tensor = InferInput("raw_input", tensor_data.shape, "UINT8")
+                tensor.set_data_from_numpy(tensor_data)
 
-                inp = InferInput("height_input", [1, 1], "INT32")
-                inp.set_data_from_numpy(
-                    np.array([[self._input_h]], dtype=np.int32)
-                )
-                inputs.append(inp)
 
-                inp = InferInput("channels_input", [1, 1], "INT32")
-                inp.set_data_from_numpy(
-                    np.array([[3]], dtype=np.int32)
-                )
-                inputs.append(inp)
-
-                inp = InferInput("ts_input", [1, 1], "INT64")
-                inp.set_data_from_numpy(
-                    np.array([[ts]], dtype=np.int64)
-                )
-                inputs.append(inp)
-
-                outputs = [
-                    InferRequestedOutput("session_id_output"),
-                    InferRequestedOutput("comment_output"),
-                    InferRequestedOutput("ts_output"),
-                    InferRequestedOutput("boxes_output"),
-                ]
-
-                result = await self._client.infer(
+                response = await self._client.infer(
                     model_name=self._model_name,
-                    inputs=inputs,
-                    outputs=outputs,
+                    inputs=[tensor]
                 )
-                res_boxes = result.as_numpy("boxes_output")
-                if res_boxes is not None:
-                    self._latest_boxes = res_boxes[0]
+                output_data = response.as_numpy("raw_output")
+                if output_data is not None:
+                    frame_response = ml_worker_pb2.FrameResponse()
+                    frame_response.ParseFromString(output_data.tobytes())
+
+                    res_boxes = frame_response.boxes
+                    if res_boxes is not None:
+                        self._latest_boxes = res_boxes
 
         except asyncio.CancelledError:
             pass
