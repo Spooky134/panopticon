@@ -81,7 +81,7 @@ services:
       - S3_BUCKET_NAME=${S3_BUCKET_NAME}
       - S3_REGION=${S3_REGION}
     depends_on:
-      - ml_service
+      - triton_ml_service
       - coturn
       - storage
     expose:
@@ -91,20 +91,27 @@ services:
     command: uvicorn main:app --host 0.0.0.0 --port ${VSTREAM_SERVICE_PORT} --workers 1
     networks:
       - mainnet
-  ml_service:
+  triton_ml_service:
     build:
       context: .
-      dockerfile: ml_service/Dockerfile
-    container_name: ml_service
+      dockerfile: triton_ml_service/Dockerfile
+    container_name: triton_ml_service
+    volumes:
+      - ./triton_ml_service/ml_repository:/models
     env_file: .env
-    environment:
-      - ML_SERVICE_HOST=${ML_SERVICE_HOST}
-      - ML_SERVICE_PORT=${ML_SERVICE_PORT}
     expose:
-      - "${ML_SERVICE_PORT}"
-    command: python server.py
+      - ${ML_SERVICE_PORT}
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: all
+    #           capabilities: [gpu]
+    command: ["tritonserver", "--model-repository=/models", "--log-info=false"]
     networks:
       - mainnet
+    restart: unless-stopped
   coturn:
     image: instrumentisto/coturn
     container_name: coturn

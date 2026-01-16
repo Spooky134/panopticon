@@ -1,5 +1,6 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
+import tritonclient.grpc.aio as grpcclient
 
 from core.database import Base, engine
 from core.logger import get_logger
@@ -7,7 +8,8 @@ from core.engine.live_streaming_session_manager import LiveStreamingSessionManag
 from infrastructure.s3.s3_video_storage_factory import create_s3_video_storage
 from infrastructure.video.frame_collector_factory import FrameCollectorFactory
 from infrastructure.webrtc.connection_factory import ConnectionFactory
-from infrastructure.grpc_client.video_processor_factory import VideoProcessorFactory
+# from infrastructure.grpc_client.video_processor_factory import VideoProcessorFactory
+from infrastructure.triton_proccessor.video_processor_factory import VideoProcessorFactory
 from core.events import EventManager
 from config import settings
 
@@ -22,9 +24,13 @@ async def lifespan(app: FastAPI):
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
 
+    app.state.triton_client = grpcclient.InferenceServerClient(
+        url=settings.settings.ML_SERVICE_URL
+    )
+
     session_manager = LiveStreamingSessionManager(
         connection_factory=ConnectionFactory(ice_servers=settings.ice_servers),
-        processor_factory=VideoProcessorFactory(service_url=settings.settings.ML_SERVICE_URL),
+        processor_factory=VideoProcessorFactory(triton_client=app.state.triton_client),
         collector_factory=FrameCollectorFactory(),
         max_sessions=1000
     )
@@ -43,5 +49,6 @@ async def lifespan(app: FastAPI):
 
     await engine.dispose()
 
+    await app.state.triton_client.close()
 
 
