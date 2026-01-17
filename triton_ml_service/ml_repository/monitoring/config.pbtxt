@@ -27,7 +27,7 @@ instance_group [
   }
 ]
 
-# ОПТИМИЗАЦИЯ РЕАЛТАЙМА
-dynamic_batching {
-  max_queue_delay_microseconds: 5000
-}
+## ОПТИМИЗАЦИЯ РЕАЛТАЙМА
+#dynamic_batching {
+#  max_queue_delay_microseconds: 5000
+#}

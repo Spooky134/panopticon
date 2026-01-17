@@ -27,6 +27,7 @@ COPY triton_ml_service/requirements.txt /tmp/requirements.txt
 
 
 RUN pip3 install --no-cache-dir -r /tmp/requirements.txt
+#RUN pip3 install mmcv mmengine mmpose mmaction2
 
 COPY proto/ /app/proto/
 
