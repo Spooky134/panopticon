@@ -1,11 +1,11 @@
 {% extends "streaming/base.html" %}
 {% load static %}
 
-{% block title %}Video stream via WebRTC{% endblock %}
+{% block title %}Calibration + Monitoring session{% endblock %}
 
 {% block content %}
 <div class="container">
-  <h1 class="display-5 fw-bold text-center mb-4">Video stream via WebRTC</h1>
+  <h1 class="display-5 fw-bold text-center mb-4">Calibration + Monitoring session</h1>
 
   <div class="row">
     <div class="col-md-6">
@@ -249,8 +249,7 @@
     });
 
     localMetrics.textContent = `FPS (out): ${fpsOut.toFixed(1)} | Bitrate: ${bitrateKbps.toFixed(1)} kbps`;
-    remoteMetrics.textContent = `FPS (in): ${fpsIn.toFixed(1)} | RTT: ${rtt.toFixed(1)} ms`;
-    connectionInfo.textContent = `End-to-end latency ≈ ${rtt.toFixed(1)} ms`;
+    remoteMetrics.textContent = `FPS (in): ${fpsIn.toFixed(1)}`;
 
     setTimeout(monitorStats, 1000);
   }

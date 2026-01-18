@@ -2,15 +2,12 @@ import triton_python_backend_utils as pb_utils
 import numpy as np
 import json
 import sys
-# from utils.open_pose_model import RecognitionModel
-from utils.mm import RecognitionModel
+from utils.media_p import RecognitionModel
 import os
+import cv2
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
 
-# PROTO_FILE = os.path.join(current_dir, "utils", "pose_deploy_linevec.prototxt")
-# WIGHT_FILE = os.path.join(current_dir, "utils", "pose_iter_440000.caffemodel")
-#
 sys.path.append('/app/generated')
 
 
@@ -19,7 +16,7 @@ import ml_worker_pb2
 class TritonPythonModel:
     def initialize(self, args):
         self.model_config = json.loads(args['model_config'])
-        self.annotator = RecognitionModel()
+        self.session_states = {}
         print("Proctoring Model Initialized")
 
     def execute(self, requests):
@@ -32,14 +29,49 @@ class TritonPythonModel:
                     tensor=input_tensor
                 )
 
+                if session_id not in self.session_states:
+                    self.session_states[session_id] = {
+                        'frame_count': 0,
+                        'calibration_done': False,
+                        "recognition_model": RecognitionModel()
+                    }
 
-                annotated_frame = self.annotator.process_frame(frame=frame)
+                state = self.session_states[session_id]
+                state['frame_count'] += 1
+
+                if not state['calibration_done'] and state['frame_count'] <= 900:
+                    annotated_frame = state["recognition_model"].calibration_session(frame)
+                    cv2.putText(
+                        frame,
+                        "CALIBRATION...",
+                        (frame.shape[1] - 300, 50),
+                        cv2.FONT_HERSHEY_SIMPLEX,
+                        1,
+                        (0, 255, 0),
+                        3
+                    )
+
+                    if state['frame_count'] == 900:
+                        state["recognition_model"].calibration_profile()
+                        state['calibration_done'] = True
+
+                else:
+                    annotated_frame = state["recognition_model"].monitoring_session(frame,
+                                                                                tolerance=0.05,
+                                                                                angle_tolerance=20)
+                    cv2.putText(
+                        frame,
+                        "MONITORING...",
+                        (frame.shape[1] - 300, 50),
+                        cv2.FONT_HERSHEY_SIMPLEX,
+                        1,
+                        (255, 0, 0),
+                        3)
 
 
-                # cv2.rectangle(frame, (50,50), (200, 200), (0, 255, 0), 2)
-                #
-                # gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-                # processed_image = cv2.cvtColor(gray, cv2.COLOR_BGR2RGB)
+
+                # annotated_frame = self.recognition_model.process_frame(frame=frame)
+
 
 
 
