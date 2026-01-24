@@ -1,8 +1,0 @@
-grpcio
-grpcio-tools
-numpy
-opencv-python
-protobuf
-setuptools
-typing_extensions
-mediapipe==0.10.21

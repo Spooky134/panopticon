@@ -81,7 +81,7 @@ services:
       - S3_BUCKET_NAME=${S3_BUCKET_NAME}
       - S3_REGION=${S3_REGION}
     depends_on:
-      - triton_ml_service
+      - ml_service
       - coturn
       - storage
     expose:
@@ -91,13 +91,13 @@ services:
     command: uvicorn main:app --host 0.0.0.0 --port ${VSTREAM_SERVICE_PORT} --workers 1
     networks:
       - mainnet
-  triton_ml_service:
+  ml_service:
     build:
       context: .
-      dockerfile: triton_ml_service/Dockerfile
-    container_name: triton_ml_service
+      dockerfile: ml_service/Dockerfile
+    container_name: ml_service
     volumes:
-      - ./triton_ml_service/ml_repository:/models
+      - ./ml_service/ml_repository:/models
     env_file: .env
     expose:
       - ${ML_SERVICE_PORT}

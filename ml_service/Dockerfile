@@ -1,11 +1,7 @@
-FROM python:3.13-bookworm
+# Используем официальный образ Triton. Версия 24.12 — самая свежая на начало 2026.
+FROM nvcr.io/nvidia/tritonserver:24.12-py3
 
-ENV PYTHONDONTWRITEBYTECODE=1
-ENV PYTHONUNBUFFERED=1
-
-WORKDIR /app
-
-# Устанавливаем системные зависимости
+# Устанавливаем системные зависимости, которые нужны OpenCV и твоей модели
 RUN apt-get update && \
     apt-get install -y \
     libgl1 \
@@ -26,20 +22,27 @@ RUN apt-get update && \
     libgtk-3-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Копируем requirements первыми для лучшего кэширования
-COPY ml_service/requirements.txt .
 
-# Устанавливаем Python зависимости
-RUN pip install --no-cache-dir -r requirements.txt
+COPY ml_service/requirements.txt /tmp/requirements.txt
 
-# Копируем исходный код
-COPY ml_service/app/ .
 
-COPY proto .
+RUN pip3 install --no-cache-dir -r /tmp/requirements.txt
+#RUN pip3 install mmcv mmengine mmpose mmaction2
 
-# Создаем protobuf файлы (если они еще не сгенерированы)
-RUN python -m grpc_tools.protoc \
-    --proto_path=. \
-    --python_out=. \
-    --grpc_python_out=. \
-    ml_worker.proto
+COPY proto/ /app/proto/
+
+RUN mkdir -p /app/generated && \
+    python3 -m grpc_tools.protoc \
+        -I/app/proto \
+        --python_out=/app/generated \
+        --grpc_python_out=/app/generated \
+        /app/proto/ml_worker.proto
+
+
+WORKDIR /opt/tritonserver
+
+
+EXPOSE 8000 8001 8002
+
+
+CMD ["tritonserver", "--model-repository=/models", "--log-verbose=1"]
