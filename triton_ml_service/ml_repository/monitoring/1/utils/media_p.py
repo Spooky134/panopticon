@@ -18,17 +18,17 @@ class RecognitionModel:
             min_tracking_confidence=0.5
         )
 
-        # Индексы точек ног и других лишних точек
+
         self.excluded_landmarks = {17, 18, 19, 20, 21, 22, 25, 26, 27, 28, 29, 30, 31, 32}
 
-        # Хранилище для сырых данных калибровки
+
         self._data = []
 
-        # Сформированный профиль (границы координат + углы)
-        self.motion_profile = {}
-        self.angle_profile = {}  # Новый профиль для углов
 
-    # --- Вспомогательные функции математики ---
+        self.motion_profile = {}
+        self.angle_profile = {}
+
+
     def _calculate_angle(self, a, b, c):
         """Считает угол между тремя точками (b - центральная)"""
         a = np.array(a)  # Первая точка
@@ -62,8 +62,8 @@ class RecognitionModel:
                 continue
             metrics['coords'][idx] = {'x': landmark.x, 'y': landmark.y}
 
-        # Получаем координаты ключевых точек для углов (объекты landmark)
-        # 11-12: Плечи, 23-24: Бедра (не используем т.к. excluded?),
+
+        # 11-12: Плечи, 23-24: Бедра
         # 13-14: Локти, 15-16: Запястья, 7-8: Уши
         l_sh = landmarks.landmark[11]
         r_sh = landmarks.landmark[12]

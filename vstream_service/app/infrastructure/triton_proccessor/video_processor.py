@@ -25,7 +25,6 @@ class VideoProcessor:
         triton_client: triton_grpc.InferenceServerClient,
         session_id: UUID,
         model_name: str = "monitoring",
-        input_size=(720, 1280),
     ):
         self._session_id = str(session_id)
         self._model_name = model_name
@@ -49,7 +48,6 @@ class VideoProcessor:
             self._infer_task.cancel()
 
     async def process_frame(self, frame: av.VideoFrame) -> av.VideoFrame:
-        # frame = cv2.flip(frame, 1)
         img = frame.to_ndarray(format="bgr24")
         img = cv2.flip(img, 1)
         self._input_h, self._input_w = img.shape[:2]

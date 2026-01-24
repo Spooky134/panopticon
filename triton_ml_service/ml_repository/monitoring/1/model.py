@@ -17,7 +17,7 @@ class TritonPythonModel:
     def initialize(self, args):
         self.model_config = json.loads(args['model_config'])
         self.session_states = {}
-        print("Proctoring Model Initialized")
+        print("Proctoring Model  Initialized")
 
     def execute(self, requests):
         responses = []
