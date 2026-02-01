@@ -1,0 +1,28 @@
+[project]
+name = "panopticon"
+version = "0.1.0"
+description = ""
+authors = [
+    {name = "andreychvankov",email = "whitebear134@gmail.com"}
+]
+requires-python = "~3.13"
+dependencies = [
+    "django (>=6.0.1,<7.0.0)",
+    "django-environ (>=0.12.0,<0.13.0)",
+    "pillow (>=12.1.0,<13.0.0)",
+    "psycopg (>=3.3.2,<4.0.0)",
+    "requests (>=2.32.5,<3.0.0)"
+]
+
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[dependency-groups]
+dev = [
+    "pytest (>=9.0.2,<10.0.0)",
+    "black (>=26.1.0,<27.0.0)",
+    "mypy (>=1.19.1,<2.0.0)",
+    "flake8 (>=7.3.0,<8.0.0)"
+]

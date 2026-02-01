@@ -131,7 +131,7 @@ services:
     networks:
       - mainnet
   database:
-    image: postgres:13
+    image: postgres:18-alpine
     container_name: database
     volumes:
       - postgres_data:/var/lib/postgresql/data
