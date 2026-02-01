@@ -7,10 +7,11 @@ import asyncio
 import time
 from uuid import UUID
 import sys
-
 import tritonclient.grpc.aio as triton_grpc
 from tritonclient.grpc import InferInput, InferRequestedOutput
+from infrastructure.triton_proccessor.video_processor_type import ProcessorType
 
+from infrastructure.triton_proccessor.video_processor_base import VideoProcessorBase
 from core.logger import get_logger
 
 logger = get_logger(__name__)
@@ -19,33 +20,20 @@ sys.path.append('/app/generated')
 
 import ml_worker_pb2
 
-class VideoProcessor:
+
+class VideoProcessor(VideoProcessorBase):
     def __init__(
         self,
-        triton_client: triton_grpc.InferenceServerClient,
         session_id: UUID,
-        model_name: str = "monitoring",
+        triton_client: triton_grpc.InferenceServerClient,
+        processor_type: ProcessorType = ProcessorType.MONITORING,
     ):
-        self._session_id = str(session_id)
-        self._model_name = model_name
-        self._input_w, self._input_h=None, None
+        super().__init__(
+            triton_client=triton_client,
+            processor_type=processor_type
+        )
 
-        self._client = triton_client
-        self._queue = asyncio.Queue(maxsize=1)
-
-        # shared inference result
-        self._latest_boxes: np.ndarray | None = None
-
-        self._latest_processed_frame: np.ndarray | None = None
-
-        self._infer_task: asyncio.Task | None = None
-
-    async def start(self):
-        self._infer_task = asyncio.create_task(self._infer_loop())
-
-    async def stop(self):
-        if self._infer_task:
-            self._infer_task.cancel()
+        self._session_id = session_id
 
     async def process_frame(self, frame: av.VideoFrame) -> av.VideoFrame:
         img = frame.to_ndarray(format="bgr24")
@@ -96,7 +84,7 @@ class VideoProcessor:
                 tensor.set_data_from_numpy(tensor_data)
 
                 response = await self._client.infer(
-                    model_name=self._model_name,
+                    model_name=self._processor_type,
                     inputs=[tensor]
                 )
 

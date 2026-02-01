@@ -2,6 +2,7 @@ from typing import Callable
 from uuid import UUID
 
 from core.entities.sdp_data import SDPEntity
+from infrastructure.triton_proccessor.video_processor_type import ProcessorType
 from infrastructure.video.frame_collector_factory import FrameCollectorFactory
 from core.engine.live_streaming_session import LiveStreamingSession
 from infrastructure.triton_proccessor.video_processor_factory import VideoProcessorFactory
@@ -37,7 +38,10 @@ class LiveStreamingSessionManager:
 
         peer_connection = self._connection_factory.create()
 
-        grpc_processor = self._processor_factory.create(streaming_session_id=streaming_session_id)
+        grpc_processor = self._processor_factory.create(
+            streaming_session_id=streaming_session_id,
+            processor_type=ProcessorType.MONITORING
+        )
 
         collector = self._collector_factory.create(session_id=streaming_session_id)
 

@@ -1,7 +1,5 @@
-# Используем официальный образ Triton. Версия 24.12 — самая свежая на начало 2026.
 FROM nvcr.io/nvidia/tritonserver:24.12-py3
 
-# Устанавливаем системные зависимости, которые нужны OpenCV и твоей модели
 RUN apt-get update && \
     apt-get install -y \
     libgl1 \
@@ -27,7 +25,6 @@ COPY ml_service/requirements.txt /tmp/requirements.txt
 
 
 RUN pip3 install --no-cache-dir -r /tmp/requirements.txt
-#RUN pip3 install mmcv mmengine mmpose mmaction2
 
 COPY proto/ /app/proto/
 

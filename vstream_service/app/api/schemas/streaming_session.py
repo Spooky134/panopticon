@@ -5,7 +5,7 @@ from uuid import UUID
 from pydantic import BaseModel, ConfigDict, Field
 
 class StreamingSessionResponse(BaseModel):
-    streaming_session_id: UUID = Field(validation_alias="id")
+    id: UUID
     user_id: int
     test_id: UUID
     created_at: datetime
@@ -21,4 +21,4 @@ class StreamingSessionCreateRequest(BaseModel):
     test_id: UUID
 
 class StreamingSessionRequest(BaseModel):
-    streaming_session_id: UUID
+    id: UUID

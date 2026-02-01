@@ -26,7 +26,7 @@ class WebStreamView(View):
                                  headers={"X-Api-Key": settings.SECRET_KEY})
                                  # timeout=3)
         data = response.json()
-        streaming_session_id = data.get("streaming_session_id")
+        streaming_session_id = data.get("id")
 
         relative_offer_url = reverse(viewname='streaming:stream-offer',
                                      kwargs={'streaming_session_id': streaming_session_id})

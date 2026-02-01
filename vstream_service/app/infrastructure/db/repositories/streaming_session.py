@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, List
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, update
 from sqlalchemy.orm import joinedload
@@ -48,6 +48,17 @@ class StreamingSessionRepository:
 
         logger.info(f"session: {streaming_session_entity.id} - updated")
         return await self.get(streaming_session_id=streaming_session_entity.id)
+
+
+    async def get_all(self) -> List[StreamingSessionEntity]:
+        result = await self.db.execute(
+            select(StreamingSessionModel).
+            options(joinedload(StreamingSessionModel.video))
+        )
+        models = result.scalars().all()
+        entities = [StreamingSessionEntity.from_db(model) for model in models]
+
+        return entities
 
     async def delete(self, streaming_session_id: UUID) -> Optional[StreamingSessionEntity]:
         ...

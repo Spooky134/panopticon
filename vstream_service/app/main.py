@@ -1,4 +1,4 @@
-from fastapi import APIRouter, FastAPI
+from fastapi import APIRouter, FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 
@@ -7,6 +7,7 @@ from api.routes import streaming_runtime
 from config.settings import settings
 from core.lifespan import lifespan
 from config.logging import setup_logging
+from core.security.api_key import get_api_key
 
 setup_logging()
 
@@ -21,6 +22,8 @@ app.add_middleware(
 )
 
 api_v1_router = APIRouter(prefix="/v1", tags=["v1"])
+# TODO общая зависимость
+# api_v1_router = APIRouter(prefix="/v1", tags=["v1"], dependencies=[Depends(get_api_key)])
 
 api_v1_router.include_router(streaming_session.router, tags=["streaming_sessions"])
 api_v1_router.include_router(streaming_runtime.router, tags=["stream"])
