@@ -140,7 +140,7 @@ class RecognitionModel:
 
         self._data = []
 
-    # --- 3. Проверка отклонений (Мониторинг) ---
+    # 3. Проверка отклонений (Мониторинг)
     def calibrate(self, frame, results, tolerance=0.05, angle_tolerance=15):
         """
         tolerance: допуск для координат (0.05 = 5% экрана)
@@ -155,7 +155,7 @@ class RecognitionModel:
         # Получаем текущие метрики
         current_metrics = self._get_metrics(results.pose_landmarks)
 
-        # --- ПРОВЕРКА 1: ГЕОМЕТРИЯ (УГЛЫ) - Основная проверка ---
+        # ПРОВЕРКА 1: ГЕОМЕТРИЯ (УГЛЫ) - Основная проверка
         # Проверяем, не сгорбился ли человек, не наклонил ли голову неправильно и т.д.
         for angle_name, value in current_metrics['angles'].items():
             bounds = self.angle_profile.get(angle_name)
@@ -167,7 +167,7 @@ class RecognitionModel:
                 is_incorrect = True
                 # Можно добавить print(f"Fail on {angle_name}: {value}") для отладки
 
-        # --- ПРОВЕРКА 2: КООРДИНАТЫ (ПОЗИЦИЯ) - Вспомогательная ---
+        # ПРОВЕРКА 2: КООРДИНАТЫ (ПОЗИЦИЯ) - Вспомогательная
         # Используем старую логику, чтобы подсветить конкретную "убежавшую" точку красным
         for idx, landmark in enumerate(results.pose_landmarks.landmark):
             if idx in self.excluded_landmarks or idx not in self.motion_profile:

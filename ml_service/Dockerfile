@@ -1,4 +1,4 @@
-FROM nvcr.io/nvidia/tritonserver:24.12-py3
+FROM nvcr.io/nvidia/tritonserver:25.12-py3
 
 RUN apt-get update && \
     apt-get install -y \
@@ -20,11 +20,12 @@ RUN apt-get update && \
     libgtk-3-dev \
     && rm -rf /var/lib/apt/lists/*
 
+COPY ml_service/pyproject.toml ml_service/poetry.lock ./
 
-COPY ml_service/requirements.txt /tmp/requirements.txt
+RUN pip install --no-cache-dir poetry==2.3.1
 
-
-RUN pip3 install --no-cache-dir -r /tmp/requirements.txt
+RUN poetry config virtualenvs.create false  \
+    && poetry install --no-interaction --no-ansi --only main --no-root
 
 COPY proto/ /app/proto/
 
@@ -40,6 +41,3 @@ WORKDIR /opt/tritonserver
 
 
 EXPOSE 8000 8001 8002
-
-
-CMD ["tritonserver", "--model-repository=/models", "--log-verbose=1"]

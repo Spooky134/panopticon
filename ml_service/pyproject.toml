@@ -1,0 +1,27 @@
+[project]
+name = "ml-service"
+version = "0.1.0"
+description = ""
+authors = [
+    {name = "andreychvankov",email = "whitebear134@gmail.com"}
+]
+requires-python = "~3.12"
+dependencies = [
+    "numpy (<2.0.0)",
+    "jaxlib (<0.5)",
+    "mediapipe (==0.10.21)",
+    "grpcio-tools (==1.62.3)"
+]
+
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[dependency-groups]
+dev = [
+    "pytest (>=9.0.2,<10.0.0)",
+    "flake8 (>=7.3.0,<8.0.0)",
+    "mypy (>=1.19.1,<2.0.0)",
+    "black (>=26.1.0,<27.0.0)"
+]
