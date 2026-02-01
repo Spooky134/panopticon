@@ -1,0 +1,36 @@
+[project]
+name = "vstream-service"
+version = "0.1.0"
+description = ""
+authors = [
+    {name = "andreychvankov",email = "whitebear134@gmail.com"}
+]
+requires-python = "~3.13"
+dependencies = [
+    "fastapi (>=0.128.0,<0.129.0)",
+    "uvicorn (>=0.40.0,<0.41.0)",
+    "opencv-python (>=4.13.0.90,<5.0.0.0)",
+    "aiortc (>=1.14.0,<2.0.0)",
+    "pydantic-settings (>=2.12.0,<3.0.0)",
+    "pyjwt (>=2.11.0,<3.0.0)",
+    "sqlalchemy (>=2.0.46,<3.0.0)",
+    "aioboto3 (>=15.5.0,<16.0.0)",
+    "tritonclient (>=2.64.0,<3.0.0)",
+    "asyncpg (>=0.31.0,<0.32.0)",
+    "grpcio-tools (>=1.76.0,<2.0.0)",
+    "psycopg (>=3.3.2,<4.0.0)",
+    "aiofiles (>=25.1.0,<26.0.0)"
+]
+
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[dependency-groups]
+dev = [
+    "black (>=26.1.0,<27.0.0)",
+    "mypy (>=1.19.1,<2.0.0)",
+    "flake8 (>=7.3.0,<8.0.0)",
+    "pytest (>=9.0.2,<10.0.0)"
+]
