@@ -27,10 +27,14 @@ class StreamingRuntimeService:
         self._s3_video_storage = s3_video_storage
 
     async def offer(self, streaming_session_id: UUID, sdp_data: SDPEntity) -> SDPEntity:
-        streaming_session_entity = await self._streaming_session_lifecycle_service.read_session(streaming_session_id)
-        user_id = streaming_session_entity.user_id
-        logger.info(f"session: {streaming_session_id} - authorized user {user_id} starting stream")
+        streaming_session_entity = await self._streaming_session_lifecycle_service.get_one_session(
+            streaming_session_id=streaming_session_id
+        )
+        if streaming_session_entity.status == LiveStreamingSessionStatus.FINISHED:
+            raise
+        logger.info(f"session: {streaming_session_id} - starting stream")
 
+        #TODO переименовать
         await self._streaming_session_manager.create_streaming_session(
             streaming_session_id=streaming_session_id,
             on_finished=self._finished_update

@@ -21,10 +21,12 @@ services:
       context: .
       dockerfile: panopticon/Dockerfile
     container_name: panopticon
-    env_file: .env
     environment:
       - PANOPTICON_NAME=${PANOPTICON_NAME}
       - VSTREAM_INTERNAL_URL=${VSTREAM_INTERNAL_URL}
+
+      - SECRET_KEY=${SECRET_KEY}
+      - APP_NAMESPACE_UUID=${APP_NAMESPACE_UUID}
       
       - TURN_URL=${TURN_URL}
       - TURN_USERNAME=${TURN_USERNAME}
@@ -54,7 +56,6 @@ services:
       context: .
       dockerfile: vstream_service/Dockerfile
     container_name: vstream_service
-    env_file: .env
     environment:
       - VSTREAM_SERVICE_NAME=${VSTREAM_SERVICE_NAME}
       - SECRET_KEY=${SECRET_KEY}
@@ -62,6 +63,7 @@ services:
       - VSTREAM_SERVICE_ACCESS_TOKEN_EXPIRE_MINUTES=${VSTREAM_SERVICE_ACCESS_TOKEN_EXPIRE_MINUTES}
       - VSTREAM_CORS_ALLOWED_ORIGINS=${VSTREAM_CORS_ALLOWED_ORIGINS}
       - VSTREAM_DEBUG=${VSTREAM_DEBUG}
+      - VSTREAM_SERVICE_PORT=${VSTREAM_SERVICE_PORT}
 
       - ML_SERVICE_URL=${ML_SERVICE_URL}
 
@@ -80,6 +82,10 @@ services:
       - S3_SECRET_KEY=${S3_SECRET_KEY}
       - S3_BUCKET_NAME=${S3_BUCKET_NAME}
       - S3_REGION=${S3_REGION}
+
+    volumes:
+      - ./vstream_service/app:/app
+      
     depends_on:
       - ml_service
       - coturn
@@ -88,7 +94,7 @@ services:
       - ${VSTREAM_SERVICE_PORT}
     ports:
       - ${VSTREAM_SERVICE_PORT}:${VSTREAM_SERVICE_PORT}
-    command: uvicorn main:app --host 0.0.0.0 --port ${VSTREAM_SERVICE_PORT} --workers 1
+    command: uvicorn main:app --host 0.0.0.0 --port ${VSTREAM_SERVICE_PORT} --workers 1 --reload
     networks:
       - mainnet
   ml_service:
@@ -98,7 +104,6 @@ services:
     container_name: ml_service
     volumes:
       - ./ml_service/ml_repository:/models
-    env_file: .env
     expose:
       - ${ML_SERVICE_PORT}
     # deploy:

@@ -13,27 +13,15 @@ class StreamingSession(models.Model):
     ]
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    user = models.ForeignKey(User,
-                             on_delete=models.CASCADE,
-                             related_name='streaming_sessions')
-    test_id = models.UUIDField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     started_at = models.DateTimeField(null=True, blank=True)
     ended_at = models.DateTimeField(null=True, blank=True, )
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="started")
 
-    # video = models.OneToOneField("TestingVideo", on_delete=models.SET_NULL, null=True, blank=True, related_name="testing_session")
-
-
-    # incidents = models.JSONField(null=True, blank=True)           # список инцидентов от ML
-    # ml_metrics = models.JSONField(null=True, blank=True)          # любые метрики/лог
-    # meta = models.JSONField(null=True, blank=True)                # свободное поле для доп.данных
-
     class Meta:
         managed = False
-        db_table = "streaming_sessions"
+        db_table = "streaming_session"
         indexes = [
-            models.Index(fields=["user_id"]),
             models.Index(fields=["status"]),
         ]
 
@@ -48,13 +36,15 @@ class StreamingVideo(models.Model):
     mime_type = models.CharField(max_length=100, null=True, blank=True)
     created_at = models.DateTimeField(null=True, blank=True)
 
-    streaming_session = models.OneToOneField(StreamingSession,
-                                             on_delete=models.CASCADE,
-                                             db_column="streaming_session_id",
-                                             related_name="video")
+    streaming_session = models.ForeignKey(
+        StreamingSession,
+        on_delete=models.CASCADE,
+        db_column="streaming_session_id",
+        related_name="video")
+
 
     class Meta:
-        db_table = "streaming_videos"
+        db_table = "streaming_video"
         #TODO поменять флаг когда будет alembic
         managed = False
         indexes = [

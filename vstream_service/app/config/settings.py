@@ -20,7 +20,6 @@ class Settings(BaseSettings):
     POSTGRES_PASSWORD: str
 
     TURN_URL: str
-    TURN_PORT: str
     TURN_USERNAME: str
     TURN_PASSWORD: str
 

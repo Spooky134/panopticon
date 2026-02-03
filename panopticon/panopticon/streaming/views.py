@@ -10,14 +10,22 @@ from django.http import JsonResponse
 import json
 
 
+
 #TODO можно задудосить стрим сервис если много запросов
 @method_decorator(login_required, name='dispatch')
 class WebStreamView(View):
     def get(self, request):
         user = request.user
+        test_id = str('c3475f90-2a15-4475-bf27-69fd55377e95')
+        uniq_streaming_session_id = uuid.uuid5(
+            uuid.UUID(settings.APP_NAMESPACE_UUID),
+            f"{user.id}:{test_id}"
+        )
+
+
+
         response = requests.post(f"{settings.VSTREAM_INTERNAL_URL}/sessions",
-                                 json={"user_id": user.id,
-                                       "test_id": str(uuid.uuid4())},
+                                 json={"streaming_session_id": str(uniq_streaming_session_id)},
                                  headers={"X-Api-Key": settings.SECRET_KEY})
                                  # timeout=3)
         data = response.json()

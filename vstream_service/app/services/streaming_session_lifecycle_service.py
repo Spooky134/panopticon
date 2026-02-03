@@ -17,15 +17,17 @@ class StreamingSessionLifecycleService:
                  session_factory):
         self._db_session_factory = session_factory
 
-
-    async def create_session(self, user_id: int, test_id: UUID) -> StreamingSessionEntity:
-        #TODO проверить есть ли сесиия чтобы не создавать еще одну при повторном запросе
+    async def create_session(self, streaming_session_id: UUID) -> StreamingSessionEntity:
         async with self._db_session_factory() as db_session:
             streaming_session_repository = StreamingSessionRepository(db=db_session)
 
+            streaming_session_entity = await streaming_session_repository.get(streaming_session_id=streaming_session_id)
+            if streaming_session_entity:
+                logger.info(f"session: {streaming_session_entity.id} - existed.")
+                return streaming_session_entity
+
             streaming_session_entity = StreamingSessionEntity(
-                test_id=test_id,
-                user_id=user_id,
+                id=streaming_session_id
             )
 
             streaming_session_entity = await streaming_session_repository.create(
@@ -37,7 +39,7 @@ class StreamingSessionLifecycleService:
             return streaming_session_entity
 
 
-    async def read_session(self, streaming_session_id: UUID) -> StreamingSessionEntity:
+    async def get_one_session(self, streaming_session_id: UUID) -> StreamingSessionEntity:
         async with self._db_session_factory() as db_session:
             streaming_session_repository = StreamingSessionRepository(db=db_session)
 
@@ -49,7 +51,7 @@ class StreamingSessionLifecycleService:
             return streaming_session_entity
 
 
-    async def read_all_sessions(self) -> List[StreamingSessionEntity]:
+    async def get_all_sessions(self) -> List[StreamingSessionEntity]:
         async with self._db_session_factory() as db_session:
             streaming_session_repository = StreamingSessionRepository(db=db_session)
 

@@ -22,8 +22,10 @@ class StreamingSessionRepository:
             select(StreamingSessionModel).
             options(joinedload(StreamingSessionModel.video)).
             where(StreamingSessionModel.id == streaming_session_id))
-        model = result.scalar_one_or_none()
-        return StreamingSessionEntity.from_db(model)
+        model = result.unique().scalar_one_or_none()
+        if model:
+            return StreamingSessionEntity.from_db(model)
+        return None
 
     async def create(self, streaming_session_entity: StreamingSessionEntity) -> Optional[StreamingSessionEntity]:
         data_dict = asdict(streaming_session_entity)
@@ -55,8 +57,8 @@ class StreamingSessionRepository:
             select(StreamingSessionModel).
             options(joinedload(StreamingSessionModel.video))
         )
-        models = result.scalars().all()
-        entities = [StreamingSessionEntity.from_db(model) for model in models]
+        models = result.unique().scalars().all()
+        entities = [StreamingSessionEntity.from_db(model) for model in models if model]
 
         return entities
 
