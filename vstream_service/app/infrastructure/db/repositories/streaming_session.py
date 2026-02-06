@@ -8,12 +8,13 @@ from dataclasses import asdict
 
 from core.entities.streaming_session import StreamingSessionEntity
 from infrastructure.db.models import StreamingSessionModel
+from infrastructure.db.repositories.repository_base import BaseRepository
 
 
 logger = get_logger(__name__)
 
 #TODO оптимизировать
-class StreamingSessionRepository:
+class StreamingSessionRepository():
     def __init__(self, db: AsyncSession):
         self.db = db
 

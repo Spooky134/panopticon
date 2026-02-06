@@ -1,4 +1,5 @@
 from aiortc import RTCIceServer
+from pydantic import root_validator, model_validator
 
 from pydantic_settings import BaseSettings
 
@@ -17,7 +18,6 @@ class Settings(BaseSettings):
     POSTGRES_DB: str
     POSTGRES_USER: str
     POSTGRES_PASSWORD: str
-    POSTGRES_PASSWORD: str
 
     TURN_URL: str
     TURN_USERNAME: str
@@ -32,6 +32,13 @@ class Settings(BaseSettings):
     S3_REGION: str
 
     SECRET_KEY: str
+
+    @property
+    def DB_URL(self):
+        return (
+            f"postgresql+asyncpg://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}"
+            f"@{self.POSTGRES_HOST}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
+        )
 
 settings = Settings()
 

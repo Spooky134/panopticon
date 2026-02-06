@@ -1,7 +1,7 @@
 from services.streaming_session_lifecycle_service import StreamingSessionLifecycleService
-from core.database import AsyncSessionLocal
+from core.database import async_session_maker
 
 def get_streaming_session_lifecycle_service() -> StreamingSessionLifecycleService:
     return StreamingSessionLifecycleService(
-        session_factory=AsyncSessionLocal
+        session_factory=async_session_maker
     )

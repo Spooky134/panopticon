@@ -1,25 +1,29 @@
-from fastapi import APIRouter, FastAPI, Depends
-from fastapi.middleware.cors import CORSMiddleware
+from fastapi import APIRouter, FastAPI
 import uvicorn
+from fastapi.middleware.cors import CORSMiddleware
 
 from api.routes import streaming_session
 from api.routes import streaming_runtime
 from config.settings import settings
 from core.lifespan import lifespan
-from config.logging import setup_logging
+
+
 from core.security.api_key import get_api_key
 
-setup_logging()
-
-
-app = FastAPI(title=settings.VSTREAM_SERVICE_NAME, debug=settings.VSTREAM_DEBUG, lifespan=lifespan)
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+app = FastAPI(
+    title=settings.VSTREAM_SERVICE_NAME,
+    debug=settings.VSTREAM_DEBUG,
+    lifespan=lifespan
 )
+
+app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["*"],
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+)
+
 
 api_v1_router = APIRouter(prefix="/v1", tags=["v1"])
 # TODO общая зависимость

@@ -2,6 +2,8 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 import tritonclient.grpc.aio as grpcclient
 
+
+
 from core.database import Base, engine
 from core.logger import get_logger
 from core.engine.live_streaming_session_manager import LiveStreamingSessionManager
@@ -11,14 +13,16 @@ from infrastructure.webrtc.connection_factory import ConnectionFactory
 from infrastructure.triton_proccessor.video_processor_factory import VideoProcessorFactory
 from core.events import EventManager
 from config import settings
+from config.logging import setup_logging
 
 logger = get_logger(__name__)
 
 #TODO просмотреть
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    event_bus = EventManager()
-    app.state.event_bus = event_bus
+    setup_logging()
+    # event_bus = EventManager()
+    # app.state.event_bus = event_bus
 
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
@@ -43,11 +47,8 @@ async def lifespan(app: FastAPI):
     logger.info("Shutting down: Disposing all active streaming sessions...")
 
     await session_manager.dispose_all_sessions()
-
     await s3_video_storage.close()
-
     await engine.dispose()
-
     await app.state.triton_client.close()
 
 

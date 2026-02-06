@@ -30,8 +30,8 @@ class StreamingRuntimeService:
         streaming_session_entity = await self._streaming_session_lifecycle_service.get_one_session(
             streaming_session_id=streaming_session_id
         )
-        if streaming_session_entity.status == LiveStreamingSessionStatus.FINISHED:
-            raise
+        # if streaming_session_entity.status == LiveStreamingSessionStatus.FINISHED:
+        #     pass
         logger.info(f"session: {streaming_session_id} - starting stream")
 
         #TODO переименовать

@@ -1,28 +1,30 @@
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
-from sqlalchemy.orm import declarative_base
+from sqlalchemy.orm import DeclarativeBase
 from typing import AsyncGenerator
-from config.settings import settings
+from app.config.settings import settings
 
-
-DB_URL = (
-    f"postgresql+asyncpg://{settings.POSTGRES_USER}:{settings.POSTGRES_PASSWORD}"
-    f"@{settings.POSTGRES_HOST}:{settings.POSTGRES_PORT}/{settings.POSTGRES_DB}"
-)
+#
+# DB_URL = (
+#     f"postgresql+asyncpg://{settings.POSTGRES_USER}:{settings.POSTGRES_PASSWORD}"
+#     f"@{settings.POSTGRES_HOST}:{settings.POSTGRES_PORT}/{settings.POSTGRES_DB}"
+# )
 
 engine = create_async_engine(
-    DB_URL
+    settings.DB_URL
 )
 
-AsyncSessionLocal = async_sessionmaker(
+async_session_maker = async_sessionmaker(
     bind=engine,
+    class_=AsyncSession,
     autocommit=False,
     autoflush=False,
-    expire_on_commit=False  # Чтобы объекты после commit() оставались доступны
+    expire_on_commit=False
 )
 
-Base = declarative_base()
+class Base(DeclarativeBase):
+    pass
 
 
 async def get_db() -> AsyncGenerator[AsyncSession, None]:
-    async with AsyncSessionLocal() as db:  # Автоматически закроется при выходе
+    async with async_session_maker() as db:
         yield db
