@@ -12,8 +12,8 @@ sys.path.insert(0, dirname(dirname(dirname(abspath(__file__)))))
 
 from app.core.database import Base
 from app.config.settings import settings
-from app.infrastructure.db.models.streaming_session import StreamingSessionModel
-from app.infrastructure.db.models.streaming_video import StreamingVideoModel
+from app.streaming_session.models import StreamingSessionModel
+from app.streaming_video.models import StreamingVideoModel
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

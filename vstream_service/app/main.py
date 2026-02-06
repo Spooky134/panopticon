@@ -2,8 +2,8 @@ from fastapi import APIRouter, FastAPI
 import uvicorn
 from fastapi.middleware.cors import CORSMiddleware
 
-from api.routes import streaming_session
-from api.routes import streaming_runtime
+from app.streaming_session.router import router as streaming_session_router
+from app.stream.router import router as stream_router
 from config.settings import settings
 from core.lifespan import lifespan
 
@@ -29,8 +29,8 @@ api_v1_router = APIRouter(prefix="/v1", tags=["v1"])
 # TODO общая зависимость
 # api_v1_router = APIRouter(prefix="/v1", tags=["v1"], dependencies=[Depends(get_api_key)])
 
-api_v1_router.include_router(streaming_session.router, tags=["streaming_sessions"])
-api_v1_router.include_router(streaming_runtime.router, tags=["stream"])
+api_v1_router.include_router(streaming_session_router, tags=["streaming_sessions"])
+api_v1_router.include_router(stream_router, tags=["stream"])
 
 app.include_router(api_v1_router, prefix="/api")
 
