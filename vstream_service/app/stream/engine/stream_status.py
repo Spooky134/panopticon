@@ -1,6 +1,6 @@
 from enum import Enum
 
-class LiveStreamingSessionStatus(str, Enum):
+class StreamStatus(str, Enum):
     CREATED = "created"
     RUNNING = "running"
     FINISHED = "finished"

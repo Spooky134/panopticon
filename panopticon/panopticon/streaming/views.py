@@ -9,6 +9,7 @@ import uuid
 from django.http import JsonResponse
 import json
 
+from .utils.ice_servers import get_ice_servers
 
 
 #TODO можно задудосить стрим сервис если много запросов
@@ -42,12 +43,11 @@ class WebStreamView(View):
 
         # print(full_stop_url)
 
+
         context = {
             'stop_url': full_stop_url,
             'offer_url': full_offer_url,
-            'turn_url': settings.TURN_URL,
-            'turn_username': settings.TURN_USERNAME,
-            'turn_password': settings.TURN_PASSWORD
+            'ice_servers': json.dumps(get_ice_servers(identifier=uniq_streaming_session_id)),
         }
         return render(request, 'streaming/streaming.html', context)
 

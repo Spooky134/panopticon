@@ -50,9 +50,7 @@
   const CONFIG = {
     offerURL: "{{ offer_url }}",
     stopURL: "{{ stop_url }}",
-    turnURL: "{{ turn_url }}",
-    turnUsername: "{{ turn_username }}",
-    turnPassword: "{{ turn_password }}"
+    iceServers: {{ ice_servers|safe }}
   };
 
   // ... остальной JavaScript код без изменений ...
@@ -89,11 +87,14 @@
         localStatus.textContent = "Active";
         localStatus.className = "badge bg-success";
 
+<!--        pc = new RTCPeerConnection({-->
+<!--          iceServers: [-->
+<!--            { urls: ["stun:stun.l.google.com:19302"] },-->
+<!--            { urls: [CONFIG.turnURL], username: CONFIG.turnUsername, credential: CONFIG.turnPassword }-->
+<!--          ]-->
+<!--        });-->
         pc = new RTCPeerConnection({
-          iceServers: [
-            { urls: ["stun:stun.l.google.com:19302"] },
-            { urls: [CONFIG.turnURL], username: CONFIG.turnUsername, credential: CONFIG.turnPassword }
-          ]
+          iceServers: CONFIG.iceServers
         });
 
         localStream.getTracks().forEach(track => pc.addTrack(track, localStream))

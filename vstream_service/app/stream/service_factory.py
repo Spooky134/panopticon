@@ -1,11 +1,15 @@
-from app.stream.service import StreamingRuntimeService
-from app.aws.s3_video_storage import S3VideoStorage
+from fastapi import Depends, Request
+
+from app.stream.service import StreamingService
+from app.streaming_session.service_factory import create_streaming_session_service
 
 
-def create_streaming_runtime_service(streaming_session_manager,
-                                  streaming_session_lifecycle_service,
-                                  s3_video_storage: S3VideoStorage,
-                                  ) -> StreamingRuntimeService:
-    return StreamingRuntimeService(streaming_session_manager=streaming_session_manager,
-                                   streaming_session_lifecycle_service=streaming_session_lifecycle_service,
-                                   s3_video_storage=s3_video_storage)
+def create_streaming_service(
+        request: Request,
+        streaming_session_service = Depends(create_streaming_session_service)
+) -> StreamingService:
+    return StreamingService(
+        streaming_manager=request.app.state.streaming_manager,
+        streaming_session_service=streaming_session_service,
+        s3_video_storage=request.app.state.s3_video_storage
+    )

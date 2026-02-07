@@ -1,11 +1,11 @@
 from typing import Annotated
 from fastapi import Depends
 
-from app.streaming_session.service import StreamingSessionLifecycleService
-from app.streaming_session.service_factory import get_streaming_session_lifecycle_service
+from app.streaming_session.service_factory import create_streaming_session_service
+from app.streaming_session.service import StreamingSessionService
 
 
-StreamingLifecycleServiceDep: type[StreamingSessionLifecycleService] = Annotated[
-    StreamingSessionLifecycleService,
-    Depends(get_streaming_session_lifecycle_service)
+StreamingSessionServiceDep: type[StreamingSessionService] = Annotated[
+    StreamingSessionService,
+    Depends(create_streaming_session_service)
 ]

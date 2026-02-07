@@ -15,7 +15,7 @@ from app.stream.webrtc.video_transform_track import VideoTransformTrack
 logger = get_logger(__name__)
 
 # TODO неправильно работатают события trackrecived появляется когда еще кандидаты cheecking
-class LiveStreamingSession:
+class Stream:
     def __init__(self,
                  session_id: UUID,
                  peer_connection: RTCPeerConnection,

@@ -3,13 +3,13 @@ from uuid import UUID, uuid4
 from typing import Optional
 from dataclasses import dataclass, field
 
-from app.stream.engine.live_streaming_session_status import LiveStreamingSessionStatus
+from app.stream.engine.stream_status import StreamStatus
 
 
 @dataclass(frozen=True)
 class StreamingSessionEntity:
     id: Optional[UUID]
-    status: str = field(default=LiveStreamingSessionStatus.CREATED)
+    status: str = field(default=StreamStatus.CREATED)
     created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     started_at: Optional[datetime] = None
     ended_at: Optional[datetime] = None

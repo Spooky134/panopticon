@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 from pathlib import Path
 import os
 import environ
+import json
 
 env = environ.Env()
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -21,19 +22,19 @@ env.read_env(BASE_DIR / '.env')
 
 VSTREAM_INTERNAL_URL = env("VSTREAM_INTERNAL_URL")
 
-TURN_URL = env('TURN_URL')
-TURN_USERNAME = env('TURN_USERNAME')
-TURN_PASSWORD = env('TURN_PASSWORD')
+STUN_SERVERS = [url.strip() for url in (env('STUN_SERVERS', default="[]")).split(",") if url.strip()]
+TURN_SERVERS = [url.strip() for url in (env('TURN_SERVERS', default="[]")).split(",") if url.strip()]
+TURN_SHARED_SECRET = env('TURN_SHARED_SECRET')
 
-POSTGRES_DB=env('POSTGRES_DB')
-POSTGRES_USER=env('POSTGRES_USER')
-POSTGRES_PASSWORD=env('POSTGRES_PASSWORD')
-POSTGRES_HOST=env('POSTGRES_HOST')
-POSTGRES_PORT=env('POSTGRES_PORT')
+POSTGRES_DB = env('POSTGRES_DB')
+POSTGRES_USER = env('POSTGRES_USER')
+POSTGRES_PASSWORD = env('POSTGRES_PASSWORD')
+POSTGRES_HOST = env('POSTGRES_HOST')
+POSTGRES_PORT = env('POSTGRES_PORT')
 
 
-SECRET_KEY=env('SECRET_KEY')
-APP_NAMESPACE_UUID=env('APP_NAMESPACE_UUID')
+SECRET_KEY = env('SECRET_KEY')
+APP_NAMESPACE_UUID = env('APP_NAMESPACE_UUID')
 
 
 MEDIA_URL = '/media/'

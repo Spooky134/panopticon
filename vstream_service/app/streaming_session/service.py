@@ -13,7 +13,7 @@ from app.streaming_video.repository import StreamingVideoRepository
 
 logger = get_logger(__name__)
 
-class StreamingSessionLifecycleService:
+class StreamingSessionService:
     def __init__(self,
                  session_factory):
         self._db_session_factory = session_factory
