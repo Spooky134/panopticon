@@ -1,8 +1,8 @@
 from uuid import UUID
 import tritonclient.grpc.aio as grpcclient
 
-from app.ml_client.video_processor import VideoProcessor
-from app.ml_client.video_processor_type import ProcessorType
+from app.ml_processor.video_processor import VideoProcessor
+from app.ml_processor.video_processor_type import ProcessorType
 
 
 class VideoProcessorFactory:

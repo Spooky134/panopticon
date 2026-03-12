@@ -3,7 +3,7 @@ from numpy import ndarray
 import asyncio
 import tritonclient.grpc.aio as triton_grpc
 
-from app.ml_client.video_processor_type import ProcessorType
+from app.ml_processor.video_processor_type import ProcessorType
 
 
 class VideoProcessorBase:

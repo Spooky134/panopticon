@@ -1,49 +1,100 @@
-from typing import Any
-from pydantic import field_validator
+import base64
+import hashlib
+import hmac
+from pathlib import Path
+from typing import Any, List, Tuple
+from uuid import UUID
+from aiortc import RTCIceServer
+from pydantic import field_validator, BaseModel
 
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
+ROOT_DIR = Path(__file__).parent.parent.parent.parent
+ENV_FILE_PATH = ROOT_DIR / ".env"
 
 
-class Settings(BaseSettings):
-    VSTREAM_SERVICE_NAME: str
-    VSTREAM_DEBUG: bool
-    VSTREAM_CORS_ALLOWED_ORIGINS: str
-    SECRET_KEY: str
-    VSTREAM_SERVICE_PORT: int
-    VSTREAM_SERVICE_ALGORITHM: str
-    VSTREAM_SERVICE_ACCESS_TOKEN_EXPIRE_MINUTES: int
+class S3Config(BaseModel):
+    url: str
+    bucket_name: str
+    access_key: str
+    secret_key: str
+    region: str
 
-    ML_SERVICE_URL: str
-
-    STUN_SERVERS: Any
-    TURN_SERVERS: Any
-    TURN_SHARED_SECRET: str
-
-    POSTGRES_HOST: str
-    POSTGRES_PORT: int
-    POSTGRES_DB: str
-    POSTGRES_USER: str
-    POSTGRES_PASSWORD: str
-
-    S3_URL: str
-    S3_BUCKET_NAME: str
-    S3_ACCESS_KEY: str
-    S3_SECRET_KEY: str
-    S3_REGION: str
-
-    @field_validator("STUN_SERVERS", "TURN_SERVERS", mode="before")
-    @classmethod
-    def parse_json_servers(cls, value):
-        if isinstance(value, str):
-            value = [url.strip() for url in value.split(",") if url.strip()]
-        return value
+class DatabaseConfig(BaseModel):
+    host: str
+    port: int
+    db: str
+    user: str
+    password: str
 
     @property
-    def DB_URL(self):
+    def url(self) -> str:
         return (
-            f"postgresql+asyncpg://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}"
-            f"@{self.POSTGRES_HOST}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
+            f"postgresql+asyncpg://{self.user}:{self.password}"
+            f"@{self.host}:{self.port}/{self.db}"
         )
+
+class ServiceConfig(BaseModel):
+    name: str
+    port: int
+    debug: bool
+
+class AuthConfig(BaseModel):
+    secret_key: str
+    algorithm: str
+    access_token_expire_minutes: int
+
+class CorsConfig(BaseModel):
+    allowed_origins: List[str]
+
+class MLProcessorConfig(BaseModel):
+    url: str
+
+class TURNServerConfig(BaseModel):
+    url: str
+    shared_secret: str
+
+    def _generate_credentials(self, identifier: UUID, expiration_time: int, origin: str) -> Tuple[str, str]:
+        username = f"{expiration_time}:{origin}:{identifier}"
+
+        digester = hmac.new(
+            self.shared_secret.encode(),
+            username.encode(),
+            hashlib.sha1
+        )
+        credential = base64.b64encode(digester.digest()).decode()
+
+        return username, credential
+
+    def build_ice(self, identifier: UUID, expiration_time: int, origin: str) -> RTCIceServer:
+        username, credential = self._generate_credentials(identifier, expiration_time, origin)
+
+        return RTCIceServer([self.url], username, credential)
+
+class STUNServerConfig(BaseModel):
+    url: str
+
+    def build_ice(self) -> RTCIceServer:
+        return RTCIceServer([self.url])
+
+class Settings(BaseSettings):
+    model_config = SettingsConfigDict(
+        env_file=ENV_FILE_PATH if ENV_FILE_PATH.exists() else None,
+        env_file_encoding="utf-8",
+        extra="ignore",
+        env_nested_delimiter="__",
+    )
+    
+    turn_servers: List[TURNServerConfig]
+    stun_servers: List[STUNServerConfig]
+
+    ml_processor: MLProcessorConfig
+    stream_cors: CorsConfig
+    stream_auth: AuthConfig
+    stream_service: ServiceConfig
+    s3: S3Config
+    database: DatabaseConfig
+
 
 
 settings = Settings()

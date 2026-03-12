@@ -1,4 +1,4 @@
-from config.settings import settings
+from app.config.settings import settings
 import jwt
 
 
@@ -28,7 +28,7 @@ def verify_token(token: str) -> dict:
         raise HTTPException(status_code=401, detail="Missing authentication token")
 
     try:
-        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=["HS256"])
+        payload = jwt.decode(token, settings.stream_auth.secret_key, algorithms=[settings.stream_auth.algorithm])
         return payload  # {user_id, session_id, exp}
     except jwt.ExpiredSignatureError:
         raise HTTPException(status_code=401, detail="Token expired")

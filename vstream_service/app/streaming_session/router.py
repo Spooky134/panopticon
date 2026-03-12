@@ -10,30 +10,29 @@ from app.core.logger import get_logger
 
 logger = get_logger(__name__)
 
-router = APIRouter(prefix="/sessions", tags=["streaming_sessions"], dependencies=[Depends(get_api_key)])
+router = APIRouter(prefix="/sessions", tags=["sessions"], dependencies=[Depends(get_api_key)])
 
 
-
-@router.get("/{streaming_session_id}", response_model=StreamingSessionResponse)
-async def get_session(streaming_session_id: UUID,
-                      streaming_session_service: StreamingSessionServiceDep):
-    streaming_session_entity = await streaming_session_service.get_one_session(
-        streaming_session_id=streaming_session_id
+@router.get("/{session_id}", response_model=StreamingSessionResponse)
+async def get_session(session_id: UUID,
+                      session_service: StreamingSessionServiceDep):
+    session_entity = await session_service.get_one_session(
+        session_id
     )
-    return streaming_session_entity
+    return session_entity
 
 
 @router.get("", response_model=List[StreamingSessionResponse])
-async def get_sessions(streaming_session_service: StreamingSessionServiceDep):
-    return await streaming_session_service.get_all_sessions()
+async def get_sessions(session_service: StreamingSessionServiceDep):
+    return await session_service.get_all_sessions()
 
 
 @router.post("", response_model=StreamingSessionResponse, status_code=status.HTTP_201_CREATED)
-async def create_session(streaming_session_create: StreamingSessionRequest,
-                         streaming_session_service: StreamingSessionServiceDep):
-    streaming_session_entity = await streaming_session_service.create_session(
-        streaming_session_id=streaming_session_create.streaming_session_id
+async def create_session(data: StreamingSessionRequest,
+                         session_service: StreamingSessionServiceDep):
+    session_entity = await session_service.create_session(
+        data.streaming_session_id
     )
-    return streaming_session_entity
+    return session_entity
 
 

@@ -1,109 +1,106 @@
 services:
   gateway:
+    container_name: gateway
     build:
       context: .
       dockerfile: gateway/Dockerfile
-    container_name: gateway
+    depends_on:
+      panopticon:
+        condition: service_started
+    env_file:
+      - .env
     ports:
       - "80:80"
       - "443:443" #https
-    depends_on:
-      - panopticon
-      # - vstream_service
+    networks:
+      - mainnet
     volumes:
       # - panopticon_static:/var/www/static  # статика Django
       - ./gateway/nginx.conf:/etc/nginx/nginx.conf:ro
       - panopticon_static:/static:ro 
-    networks:
-      - mainnet
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost/ || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
   panopticon:
+    container_name: panopticon
     build:
       context: .
       dockerfile: panopticon/Dockerfile
-    container_name: panopticon
-    environment:
-      - PANOPTICON_NAME=${PANOPTICON_NAME}
-      - VSTREAM_INTERNAL_URL=${VSTREAM_INTERNAL_URL}
-
-      - SECRET_KEY=${SECRET_KEY}
-      - APP_NAMESPACE_UUID=${APP_NAMESPACE_UUID}
-
-      - STUN_SERVERS=${STUN_SERVERS}
-      - TURN_SERVERS=${TURN_SERVERS}
-      - TURN_SHARED_SECRET=${TURN_SHARED_SECRET}
-
-      - POSTGRES_HOST=${POSTGRES_HOST}
-      - POSTGRES_PORT=${POSTGRES_PORT}
-      - POSTGRES_DB=${POSTGRES_DB}
-      - POSTGRES_USER=${POSTGRES_USER}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-    volumes:
-      - ./panopticon/panopticon:/app
-      - panopticon_static:/app/staticfiles
     depends_on:
-      - database
-    expose:
-      - ${PANOPTICON_PORT}
+      database:
+        condition: service_healthy
+      streaming:
+        condition: service_healthy
+    env_file:
+      - .env
     command: |
          sh -c "python manage.py collectstatic --noinput &&
          python manage.py migrate &&
-         python manage.py runserver 0.0.0.0:${PANOPTICON_PORT}" --reload
+         python manage.py runserver 0.0.0.0:8000" --reload
+    expose:
+      - "8000"
     networks:
       - mainnet
+    volumes:
+      - ./panopticon/panopticon:/app
+      - panopticon_static:/app/staticfiles
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8000/ || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
     restart: unless-stopped
-  vstream_service:
+  streaming:
+    container_name: stream_service
     build:
       context: .
       dockerfile: vstream_service/Dockerfile
-    container_name: vstream_service
-    environment:
-      - VSTREAM_SERVICE_NAME=${VSTREAM_SERVICE_NAME}
-      - SECRET_KEY=${SECRET_KEY}
-      - VSTREAM_SERVICE_ALGORITHM=${VSTREAM_SERVICE_ALGORITHM}
-      - VSTREAM_SERVICE_ACCESS_TOKEN_EXPIRE_MINUTES=${VSTREAM_SERVICE_ACCESS_TOKEN_EXPIRE_MINUTES}
-      - VSTREAM_CORS_ALLOWED_ORIGINS=${VSTREAM_CORS_ALLOWED_ORIGINS}
-      - VSTREAM_DEBUG=${VSTREAM_DEBUG}
-      - VSTREAM_SERVICE_PORT=${VSTREAM_SERVICE_PORT}
-
-      - ML_SERVICE_URL=${ML_SERVICE_URL}
-
-      - STUN_SERVERS=${STUN_SERVERS}
-      - TURN_SERVERS=${TURN_SERVERS}
-      - TURN_SHARED_SECRET=${TURN_SHARED_SECRET}
-
-      - POSTGRES_HOST=${POSTGRES_HOST}
-      - POSTGRES_PORT=${POSTGRES_PORT}
-      - POSTGRES_DB=${POSTGRES_DB}
-      - POSTGRES_USER=${POSTGRES_USER}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-
-      - S3_URL=${S3_URL}
-      - S3_ACCESS_KEY=${S3_ACCESS_KEY}
-      - S3_SECRET_KEY=${S3_SECRET_KEY}
-      - S3_BUCKET_NAME=${S3_BUCKET_NAME}
-      - S3_REGION=${S3_REGION}
-    volumes:
-      - ./vstream_service/app:/app
     depends_on:
-      - ml_service
-      - coturn
-      - storage
-    expose:
-      - ${VSTREAM_SERVICE_PORT}
+      processor:
+        condition: service_healthy
+      turn:
+        condition: service_healthy
+      storage:
+        condition: service_healthy
+      database:
+        condition: service_healthy
+    env_file:
+      - .env
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 1 --reload
     ports:
-      - ${VSTREAM_SERVICE_PORT}:${VSTREAM_SERVICE_PORT}
-    command: uvicorn main:app --host 0.0.0.0 --port ${VSTREAM_SERVICE_PORT} --workers 1 --reload
+      - "8000:8000"
+    expose:
+      - "8000"
     networks:
       - mainnet
-  ml_service:
+    volumes:
+      - ./vstream_service:/app
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    restart: unless-stopped
+  processor:
+    container_name: ml_processor
     build:
       context: .
-      dockerfile: ml_service/Dockerfile
-    container_name: ml_service
-    volumes:
-      - ./ml_service/ml_repository:/models
+      dockerfile: ml_processor/Dockerfile
+    env_file:
+      - .env
+    command: ["tritonserver", "--model-repository=/models", "--log-info=true", "--exit-on-error=false"]
     expose:
-      - ${ML_SERVICE_PORT}
+      - "8001"
+    networks:
+      - mainnet
+    volumes:
+      - ./ml_processor/ml_repository:/models
     # deploy:
     #   resources:
     #     reservations:
@@ -111,65 +108,92 @@ services:
     #         - driver: nvidia
     #           count: all
     #           capabilities: [gpu]
-    command: ["tritonserver", "--model-repository=/models", "--log-info=true", "--exit-on-error=false"]
-    networks:
-      - mainnet
+    healthcheck:
+      test: ["CMD", "/usr/bin/grpc_health_probe", "-addr=:8001"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 60s
     restart: unless-stopped
-  coturn:
+  turn:
+    container_name: turn_server
     image: instrumentisto/coturn:4.5.2
-    container_name: coturn
-    restart: always
-    ports:
-      - "3478:3478/udp"            # STUN/TURN discovery
-      - "3478:3478/tcp"
-      - "5349:5349/tcp"            # TURN over TLS (fallback)
     command: >
       --no-cli
       --use-auth-secret
       --static-auth-secret=${TURN_SHARED_SECRET}
       --realm ${TURN_REALM}
-      --external-ip=${EXTERNAL_IP}
+      --external-ip=${PROJECT_EXTERNAL_IP}
       --no-tls
       --no-dtls
       --log-file=stdout
       --verbose
-    networks:
-      - mainnet
-  database:
-    image: postgres:18-alpine
-    container_name: database
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    environment:
-      - POSTGRES_DB=${POSTGRES_DB}
-      - POSTGRES_USER=${POSTGRES_USER}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
     ports:
-      - "${POSTGRES_PORT}:5432"
-    expose:
-      - ${POSTGRES_PORT}
+      - "3478:3478/udp"            # STUN/TURN discovery
+      - "3478:3478/tcp"
+      - "5349:5349/tcp"
     networks:
       - mainnet
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z localhost 3478 || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
+  database:
+    container_name: panopticon_database
+    image: postgres:18-alpine
+    env_file:
+      - .env
+    environment:
+      - POSTGRES_DB=${DATABASE__DB}
+      - POSTGRES_USER=${DATABASE__USER}
+      - POSTGRES_PASSWORD=${DATABASE__PASSWORD}
+    ports:
+      - "5432:5432"
+    expose:
+      - "5432"
+    networks:
+      - mainnet
+    volumes:
+      - database_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DATABASE__USER} -d ${DATABASE__DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s 
+    restart: unless-stopped
   storage:
-    image: minio/minio:RELEASE.2025-09-07T16-13-09Z
     container_name: storage
+    image: minio/minio:RELEASE.2025-09-07T16-13-09Z
+    env_file:
+      - .env
+    environment:
+      - MINIO_ROOT_USER=${S3__ACCESS_KEY}
+      - MINIO_ROOT_PASSWORD=${S3__SECRET_KEY}
+    command: server /data --console-address ":9001" 
     ports:
       - "9000:9000"
       - "9001:9001"
     expose:
-      - ${S3_PORT}
-    environment:
-      - MINIO_ROOT_USER=${S3_ACCESS_KEY}
-      - MINIO_ROOT_PASSWORD=${S3_SECRET_KEY}
-    volumes:
-      - storage:/data
-    command: server /data --console-address ":9001" 
+      - "9000"
     networks:
       - mainnet
+    volumes:
+      - storage_data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:9000/minio/health/ready || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
 
 volumes:
-  storage:
-  postgres_data:
+  storage_data:
+  database_data:
   panopticon_static:
 
 networks:

@@ -18,9 +18,17 @@ RUN apt-get update && \
     liblapack-dev \
     libx11-dev \
     libgtk-3-dev \
+    curl \
     && rm -rf /var/lib/apt/lists/*
 
-COPY ml_service/pyproject.toml ml_service/poetry.lock ./
+ARG GRPC_HEALTH_PROBE_VERSION=v0.4.24
+
+RUN apt-get update && apt-get install -y wget && \
+    wget -qO /usr/bin/grpc_health_probe https://github.com/grpc-ecosystem/grpc-health-probe/releases/download/${GRPC_HEALTH_PROBE_VERSION}/grpc_health_probe-linux-amd64 && \
+    chmod +x /usr/bin/grpc_health_probe && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
+
+COPY ml_processor/pyproject.toml ml_processor/poetry.lock ./
 
 RUN pip install --no-cache-dir poetry==2.3.1
 

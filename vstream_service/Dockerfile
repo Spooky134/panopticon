@@ -6,12 +6,14 @@ ENV PYTHONPATH=/
 
 WORKDIR /app
 
+
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     pkg-config \
     libssl-dev \
     libavcodec-dev libavformat-dev libavutil-dev libavdevice-dev libavfilter-dev \
     libsrtp2-dev libopus-dev libvpx-dev ffmpeg \
+    curl \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 
@@ -23,8 +25,7 @@ RUN pip install --no-cache-dir poetry==2.3.1
 RUN poetry config virtualenvs.create false  \
     && poetry install --no-interaction --no-ansi --without dev --no-root
 
-COPY vstream_service/app/ .
-
+COPY vstream_service .
 
 COPY proto/ /app/proto/
 

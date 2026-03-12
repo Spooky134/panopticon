@@ -7,13 +7,14 @@ import tritonclient.grpc.aio as triton_grpc
 from tritonclient.grpc import InferInput, InferRequestedOutput
 from uuid import UUID
 
-from app.ml_client.video_processor_type import ProcessorType
-from app.ml_client.video_processor_base import VideoProcessorBase
+from app.ml_processor.video_processor_type import ProcessorType
+from app.ml_processor.video_processor_base import VideoProcessorBase
 from app.core.logger import get_logger
 
 logger = get_logger(__name__)
 
 from app.generated import ml_worker_pb2
+
 
 
 class VideoProcessor(VideoProcessorBase):

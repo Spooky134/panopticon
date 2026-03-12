@@ -5,7 +5,7 @@ from uuid import UUID
 import aiofiles
 from botocore.exceptions import ClientError
 
-from core.logger import get_logger
+from app.core.logger import get_logger
 
 
 logger = get_logger(__name__)

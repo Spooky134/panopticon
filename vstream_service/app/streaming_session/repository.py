@@ -2,7 +2,9 @@ from typing import Optional, List
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, update
 from sqlalchemy.orm import joinedload
-from core.logger import get_logger
+from app.streaming_video.entities import StreamingVideoEntity
+from app.streaming_video.models import StreamingVideoModel
+from app.core.logger import get_logger
 from uuid import UUID
 from dataclasses import asdict
 
@@ -14,7 +16,7 @@ from app.streaming_session.models import StreamingSessionModel
 logger = get_logger(__name__)
 
 #TODO оптимизировать
-class StreamingSessionRepository:
+class SessionRepository:
     def __init__(self, db: AsyncSession):
         self.db = db
 
@@ -63,5 +65,25 @@ class StreamingSessionRepository:
 
         return entities
 
+
     async def delete(self, streaming_session_id: UUID) -> Optional[StreamingSessionEntity]:
         ...
+
+    async def attach_video(self, session_id: UUID, video_entity: StreamingVideoEntity) -> None:
+        streaming_video = StreamingVideoModel(
+            streaming_session_id=session_id,
+            s3_key=video_entity.s3_key,
+            created_at=video_entity.created_at,
+            duration=video_entity.meta.duration,
+            fps=video_entity.meta.fps,
+            width=video_entity.meta.width,
+            height=video_entity.meta.height,
+            file_size=video_entity.meta.file_size,
+            mime_type=video_entity.meta.mime_type,
+            meta=video_entity.meta.get_extra()
+        )
+
+        self.db.add(streaming_video)
+        await self.db.commit()
+
+        return video_entity

@@ -13,27 +13,35 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 from pathlib import Path
 import os
 import environ
+import json
+from panopticon.config.webrtc.servers import STUNServer, TURNServer
 
 env = environ.Env()
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 env.read_env(BASE_DIR / '.env')
 
-VSTREAM_INTERNAL_URL = env("VSTREAM_INTERNAL_URL")
+STREAM_SERVICE__INTERNAL_URL = env("STREAM_SERVICE__INTERNAL_URL")
 
-STUN_SERVERS = [url.strip() for url in (env('STUN_SERVERS', default="[]")).split(",") if url.strip()]
-TURN_SERVERS = [url.strip() for url in (env('TURN_SERVERS', default="[]")).split(",") if url.strip()]
-TURN_SHARED_SECRET = env('TURN_SHARED_SECRET')
+STUN_SERVERS = [
+    STUNServer(**server)
+    for server in json.loads(env("STUN_SERVERS", default="[]"))
+]
+TURN_SERVERS = [
+    TURNServer(**server) 
+    for server in json.loads(env("TURN_SERVERS", default="[]"))
+]
 
-POSTGRES_DB = env('POSTGRES_DB')
-POSTGRES_USER = env('POSTGRES_USER')
-POSTGRES_PASSWORD = env('POSTGRES_PASSWORD')
-POSTGRES_HOST = env('POSTGRES_HOST')
-POSTGRES_PORT = env('POSTGRES_PORT')
+
+DATABASE__DB = env('DATABASE__DB')
+DATABASE__USER = env('DATABASE__USER')
+DATABASE__PASSWORD = env('DATABASE__PASSWORD')
+DATABASE__HOST = env('DATABASE__HOST')
+DATABASE__PORT = env('DATABASE__PORT')
 
 
-SECRET_KEY = env('SECRET_KEY')
-APP_NAMESPACE_UUID = env('APP_NAMESPACE_UUID')
+STREAM_AUTH__SECRET_KEY = env('STREAM_AUTH__SECRET_KEY')
+PANOPTICON_NAMESPACE_UUID = env('PANOPTICON_NAMESPACE_UUID')
 
 
 MEDIA_URL = '/media/'
@@ -45,7 +53,7 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-# SECRET_KEY = 'django-insecure-*jfgofs9-pp76&w%rh^(=p=$t0p^hvy($%tl2()_hu&g@od*)6'
+SECRET_KEY = env('PANOPTICON_SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -101,11 +109,11 @@ WSGI_APPLICATION = 'panopticon.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': POSTGRES_DB,
-        'USER': POSTGRES_USER,
-        'PASSWORD': POSTGRES_PASSWORD,
-        'HOST': POSTGRES_HOST,  # имя сервиса в docker-compose
-        'PORT': POSTGRES_PORT,
+        'NAME': DATABASE__DB,
+        'USER': DATABASE__USER,
+        'PASSWORD': DATABASE__PASSWORD,
+        'HOST': DATABASE__HOST,  # имя сервиса в docker-compose
+        'PORT': DATABASE__PORT,
         'OPTIONS': {
             'server_side_binding': True,  # для psycopg3
         }

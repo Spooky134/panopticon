@@ -9,7 +9,7 @@ import uuid
 from django.http import JsonResponse
 import json
 
-from .utils.ice_servers import get_ice_servers
+from .utils.ice import get_ice_servers
 
 
 #TODO можно задудосить стрим сервис если много запросов
@@ -19,15 +19,15 @@ class WebStreamView(View):
         user = request.user
         test_id = str('c3475f90-2a15-4475-bf27-69fd55377e95')
         uniq_streaming_session_id = uuid.uuid5(
-            uuid.UUID(settings.APP_NAMESPACE_UUID),
+            uuid.UUID(settings.PANOPTICON_NAMESPACE_UUID),
             f"{user.id}:{test_id}"
         )
 
 
 
-        response = requests.post(f"{settings.VSTREAM_INTERNAL_URL}/sessions",
+        response = requests.post(f"{settings.STREAM_SERVICE__INTERNAL_URL}/sessions",
                                  json={"streaming_session_id": str(uniq_streaming_session_id)},
-                                 headers={"X-Api-Key": settings.SECRET_KEY})
+                                 headers={"X-Api-Key": settings.STREAM_AUTH__SECRET_KEY})
                                  # timeout=3)
         data = response.json()
         streaming_session_id = data.get("id")
@@ -64,13 +64,13 @@ class WebRTCOfferView(View):
             if not sdp or not offer_type:
                 return JsonResponse({"error": "Invalid SDP data"}, status=400)
 
-            vstream_service_offer = f"{settings.VSTREAM_INTERNAL_URL}/stream/{streaming_session_id}/offer"
+            vstream_service_offer = f"{settings.STREAM_SERVICE__INTERNAL_URL}/stream/{streaming_session_id}/offer"
             # TODO отправка юзера в запросе если надо
             response = requests.post(
                 vstream_service_offer,
                 json={"sdp": sdp, "type": offer_type},
                 headers={"Content-Type": "application/json",
-                         "X-Api-Key": settings.SECRET_KEY}
+                         "X-Api-Key": settings.STREAM_AUTH__SECRET_KEY}
                 # timeout=3
             )
 
@@ -90,11 +90,11 @@ class WebRTCOfferView(View):
 class WebRTCStopView(View):
     def post(self, request, streaming_session_id):
         try:
-            vstream_service_stop = f"{settings.VSTREAM_INTERNAL_URL}/stream/{streaming_session_id}/stop"
+            vstream_service_stop = f"{settings.STREAM_SERVICE__INTERNAL_URL}/stream/{streaming_session_id}/stop"
 
             response = requests.post(
                 vstream_service_stop,
-                headers={"X-Api-Key": settings.SECRET_KEY}
+                headers={"X-Api-Key": settings.STREAM_AUTH__SECRET_KEY}
             )
 
             if response.status_code != 200:

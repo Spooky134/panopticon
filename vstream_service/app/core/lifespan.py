@@ -8,7 +8,7 @@ from app.stream.engine.streaming_manager import StreamingManager
 from app.aws.s3_video_storage_factory import create_s3_video_storage
 from app.streaming_video.recorder.frame_collector_factory import FrameCollectorFactory
 from app.stream.webrtc.connection_factory import ConnectionFactory
-from app.ml_client.video_processor_factory import VideoProcessorFactory
+from app.ml_processor.video_processor_factory import VideoProcessorFactory
 from app.config.settings import settings
 from app.config.logging import setup_logging
 from app.stream.utils.ice_servers import get_ice_servers
@@ -21,12 +21,12 @@ logger = get_logger(__name__)
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     setup_logging()
-
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
+    # logger.info(type(settings.stream_cors.allowed_origins))
+    # async with engine.begin() as conn:
+    #     await conn.run_sync(Base.metadata.create_all)
 
     app.state.triton_client = grpcclient.InferenceServerClient(
-        url=settings.ML_SERVICE_URL
+        url=settings.ml_processor.url
     )
 
     streaming_manager = StreamingManager(

@@ -3,14 +3,9 @@ from sqlalchemy.orm import DeclarativeBase
 from typing import AsyncGenerator
 from app.config.settings import settings
 
-#
-# DB_URL = (
-#     f"postgresql+asyncpg://{settings.POSTGRES_USER}:{settings.POSTGRES_PASSWORD}"
-#     f"@{settings.POSTGRES_HOST}:{settings.POSTGRES_PORT}/{settings.POSTGRES_DB}"
-# )
 
 engine = create_async_engine(
-    settings.DB_URL
+    settings.database.url
 )
 
 async_session_maker = async_sessionmaker(
