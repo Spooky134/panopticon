@@ -20,7 +20,9 @@ dependencies = [
     "grpcio-tools (>=1.76.0,<2.0.0)",
     "psycopg (>=3.3.2,<4.0.0)",
     "aiofiles (>=25.1.0,<26.0.0)",
-    "alembic (>=1.18.3,<2.0.0)"
+    "alembic (>=1.18.3,<2.0.0)",
+    "taskiq (>=0.12.1,<0.13.0)",
+    "taskiq-aio-pika (>=0.6.0,<0.7.0)"
 ]
 
 

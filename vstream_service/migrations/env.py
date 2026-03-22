@@ -1,8 +1,8 @@
 from logging.config import fileConfig
 from alembic import context
 from app.core.database import Base, engine
-from app.streaming_video.models import *
-from app.streaming_session.models import *
+from app.video.models import *
+from app.session.models import *
 
 import asyncio
 

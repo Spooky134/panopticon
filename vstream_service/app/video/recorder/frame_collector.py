@@ -7,7 +7,7 @@ import queue
 from fractions import Fraction
 
 from app.core.logger import get_logger
-from app.streaming_video.entities import VideoMetaEntity
+from app.video.entities import VideoMetaEntity
 
 logger = get_logger(__name__)
 

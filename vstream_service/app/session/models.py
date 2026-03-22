@@ -1,3 +1,5 @@
+from typing import List
+
 from sqlalchemy import String, DateTime, Index, Integer
 from sqlalchemy.dialects.postgresql import UUID, JSONB
 from sqlalchemy.sql import func
@@ -11,8 +13,8 @@ from app.core.database import Base
 
 
 
-class StreamingSessionModel(Base):
-    __tablename__ = "streaming_session"
+class SessionModel(Base):
+    __tablename__ = "session"
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.now, nullable=False)
@@ -20,11 +22,11 @@ class StreamingSessionModel(Base):
     ended_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=True)
     status: Mapped[str] = mapped_column(String(20), default="created", nullable=True, index=True)
 
-    video: Mapped[list["StreamingVideoModel"]] = relationship(
-        back_populates="streaming_session",
+    videos: Mapped[List["VideoModel"]] = relationship(
+        back_populates="session",
         cascade="all, delete-orphan",
     )
 
     __table_args__ = (
-        Index("idx_streaming_session_status", "status"),
+        Index("idx_session_status", "status"),
     )

@@ -6,19 +6,23 @@ from app.core.database import async_session_maker
 class UnitOfWork:
     def __init__(self):
         self._session_factory = async_session_maker
-        self.session: AsyncSession | None = None
+        self._session = None
 
+    @property
+    def session(self) -> AsyncSession:
+        return self._session
+    
     async def commit(self):
-        if self.session:
-            await self.session.commit()
+        if self._session:
+            await self._session.commit()
 
     async def rollback(self):
-        if self.session:
-            await self.session.rollback()
+        if self._session:
+            await self._session.rollback()
 
     async def __aenter__(self):
-        self.session = self._session_factory()
-        await self.session.begin()
+        self._session = self._session_factory()
+        await self._session.begin()
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
@@ -26,5 +30,5 @@ class UnitOfWork:
             await self.rollback()
         else:
             await self.commit()
-
-        await self.session.close()
+        if self.session is not None:
+            await self._session.close()

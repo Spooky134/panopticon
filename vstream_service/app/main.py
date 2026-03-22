@@ -2,7 +2,7 @@ from fastapi import APIRouter, FastAPI
 import uvicorn
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.streaming_session.router import router as streaming_session_router
+from app.session.router import router as streaming_session_router
 from app.stream.router import router as stream_router
 from app.config.settings import settings
 from app.core.lifespan import lifespan

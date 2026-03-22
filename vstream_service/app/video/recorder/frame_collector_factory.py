@@ -1,6 +1,6 @@
 import uuid
 
-from app.streaming_video.recorder.frame_collector import FrameCollector
+from app.video.recorder.frame_collector import FrameCollector
 
 
 #TODO настройки для коллектора

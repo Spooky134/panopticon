@@ -6,7 +6,7 @@ from app.stream.entities import SDPEntity
 from app.stream.engine.stream import Stream
 from app.ml_processor.video_processor_type import ProcessorType
 from app.ml_processor.video_processor_factory import VideoProcessorFactory
-from app.streaming_video.recorder.frame_collector_factory import FrameCollectorFactory
+from app.video.recorder.frame_collector_factory import FrameCollectorFactory
 from app.stream.webrtc.connection_factory import ConnectionFactory
 from app.core.logger import get_logger
 

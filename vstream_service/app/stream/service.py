@@ -9,9 +9,11 @@ from app.stream.engine.stream_status import StreamStatus
 from app.stream.entities import SDPEntity
 from app.aws.s3_video_storage import S3VideoStorage
 from app.core.logger import get_logger
-from app.streaming_video.entities import StreamingVideoEntity, VideoMetaEntity
-from app.streaming_session.repository import SessionRepository
+from app.video.entities import StreamingVideoEntity, VideoMetaEntity
+from app.session.repository import SessionRepository
 from app.exceptions import NotFoundError
+from vstream_service.app.core.unit_of_work import UnitOfWork
+from vstream_service.app.session.entities import UpdateSessionEntity
 
 logger = get_logger(__name__)
 
@@ -21,18 +23,23 @@ class StreamingService:
     def __init__(
         self,
         streaming_manager: StreamingManager,
-        session_repo: SessionRepository,
+        session_repo_factory: type[SessionRepository],
+        uow_factory: type[UnitOfWork],
         s3_storage: S3VideoStorage = None,
     ):
         self._streaming_manager = streaming_manager
-        self._session_repo = session_repo
+        self._session_repo_factory = session_repo_factory
+        self._uow_factory = uow_factory
         self._s3_storage = s3_storage
+        
 
     async def offer(self, session_id: UUID, sdp_data: SDPEntity) -> SDPEntity:
-        session_entity = await self._session_repo.get(session_id)
+        async with self._uow_factory as uow:
+            repo = self._session_repo_factory(uow.session)
+            session_entity = await repo.get(session_id)
 
-        if not session_entity:
-            raise NotFoundError
+            if not session_entity:
+                raise NotFoundError
 
         # if streaming_session_entity.status == StreamStatus.FINISHED:
         #     pass
@@ -68,22 +75,21 @@ class StreamingService:
         }
 
     async def _started_update(self, session_id: UUID, started_at: datetime) -> None:
-        session_entity = await self._session_repo.get(session_id)
+        async with self._uow_factory as uow:
+            repo = self._session_repo_factory(uow.session)
+            session_entity = await repo.get(session_id)
 
-        if session_entity is None:
-            return
+            if session_entity is None:
+                raise NotFoundError
 
-        session_entity_updated = replace(
-            session_entity,
-            status=StreamStatus.RUNNING,
-            started_at=started_at
-        )
+            updated = UpdateSessionEntity(
+                status=StreamStatus.RUNNING,
+                started_at=started_at
+            )
 
-        session_entity = await self._session_repo.update(
-            session_entity_updated
-        )
+            session_entity = await self.repo.update(session_id, updated)
 
-        await self._session_repo.db.commit()
+            await uow.commit()
 
     async def _finished_update(
         self,
@@ -93,21 +99,22 @@ class StreamingService:
         video_meta: VideoMetaEntity
     ) -> None:
         logger.info(f"session: {session_id} - saving results...")
+        async with self._uow_factory as uow:
+            repo = self._session_repo_factory(uow.session)
+            session_entity = await repo.get(session_id)
+            session_entity_updated = replace(
+                session_entity,
+                status=StreamStatus.FINISHED,
+                ended_at=finished_at
+            )
 
-        session_entity = await self._session_repo.get(session_id)
-        session_entity_updated = replace(
-            session_entity,
-            status=StreamStatus.FINISHED,
-            ended_at=finished_at
-        )
+            session_entity = await repo.update(
+                session_entity_updated
+            )
 
-        session_entity = await self._session_repo.update(
-            session_entity_updated
-        )
+            await self.uow.commit()
 
-        await self._session_repo.db.commit()
-
-        # TODO TASKIQ
+            # TODO TASKIQ
         asyncio.create_task(
             self._update_video_background(
                 session_id=session_id,
@@ -119,25 +126,27 @@ class StreamingService:
 
     async def _update_video_background(self, session_id: UUID, file_path: str, video_meta: VideoMetaEntity):
         try:
-            s3_key = await self._s3_storage.upload_multipart(
-                streaming_session_id=session_id,
-                file_path=file_path,
-                object_name=str(session_id),
-                mime_type=video_meta.mime_type
-            )
-            if s3_key is not None:
-                video_entity = StreamingVideoEntity(
-                    s3_key=s3_key,
+            async with self._uow_factory as uow:
+                repo = self._session_repo_factory(uow.session)
+                s3_key = await self._s3_storage.upload_multipart(
                     streaming_session_id=session_id,
-                    meta=video_meta
+                    file_path=file_path,
+                    object_name=str(session_id),
+                    mime_type=video_meta.mime_type
                 )
+                if s3_key is not None:
+                    video_entity = StreamingVideoEntity(
+                        s3_key=s3_key,
+                        streaming_session_id=session_id,
+                        meta=video_meta
+                    )
 
-                await self._session_repo.attach_video(
-                    session_id,
-                    video_entity
-                )
-
-                logger.info(f"session: {session_id} - background video attach success")
+                    await repo.attach_video(
+                        session_id,
+                        video_entity
+                    )
+                    await uow.commit()
+                    logger.info(f"session: {session_id} - background video attach success")
         except Exception as e:
             logger.error(f"session: {session_id} - background upload critical error: {e}")
         finally:

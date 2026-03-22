@@ -5,9 +5,9 @@ from aiortc import RTCSessionDescription, RTCPeerConnection
 from uuid import UUID
 
 from app.stream.entities import SDPEntity
-from app.streaming_video.entities import VideoMetaEntity
+from app.video.entities import VideoMetaEntity
 from app.core.logger import get_logger
-from app.streaming_video.recorder.frame_collector import FrameCollector
+from app.video.recorder.frame_collector import FrameCollector
 from app.ml_processor.video_processor import VideoProcessor
 from app.stream.webrtc.video_transform_track import VideoTransformTrack
 

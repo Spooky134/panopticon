@@ -3,7 +3,7 @@ import av
 from aiortc import VideoStreamTrack
 
 from app.ml_processor.video_processor import VideoProcessor
-from app.streaming_video.recorder.frame_collector import FrameCollector
+from app.video.recorder.frame_collector import FrameCollector
 from app.core.logger import get_logger
 
 

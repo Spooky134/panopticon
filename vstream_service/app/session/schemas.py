@@ -4,7 +4,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
 
-class StreamingSessionResponse(BaseModel):
+class SessionResponse(BaseModel):
     id: UUID
     created_at: datetime
     started_at: Optional[datetime]
@@ -14,5 +14,5 @@ class StreamingSessionResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
-class StreamingSessionRequest(BaseModel):
+class CreateSessionRequest(BaseModel):
     streaming_session_id: UUID

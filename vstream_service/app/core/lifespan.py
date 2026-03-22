@@ -6,14 +6,16 @@ from app.core.database import Base, engine
 from app.core.logger import get_logger
 from app.stream.engine.streaming_manager import StreamingManager
 from app.aws.s3_video_storage_factory import create_s3_video_storage
-from app.streaming_video.recorder.frame_collector_factory import FrameCollectorFactory
+from app.video.recorder.frame_collector_factory import FrameCollectorFactory
 from app.stream.webrtc.connection_factory import ConnectionFactory
 from app.ml_processor.video_processor_factory import VideoProcessorFactory
 from app.config.settings import settings
 from app.config.logging import setup_logging
 from app.stream.utils.ice_servers import get_ice_servers
-from app.streaming_video.models import StreamingVideoModel
-from app.streaming_session.models import StreamingSessionModel
+from app.video.models import StreamingVideoModel
+from app.session.models import StreamingSessionModel
+from app.core.taskiq_broker import broker
+
 
 logger = get_logger(__name__)
 
@@ -24,6 +26,8 @@ async def lifespan(app: FastAPI):
     # logger.info(type(settings.stream_cors.allowed_origins))
     # async with engine.begin() as conn:
     #     await conn.run_sync(Base.metadata.create_all)
+    if not broker.is_worker_process:
+        await broker.startup()
 
     app.state.triton_client = grpcclient.InferenceServerClient(
         url=settings.ml_processor.url
@@ -37,15 +41,16 @@ async def lifespan(app: FastAPI):
     )
     app.state.streaming_manager = streaming_manager
 
-    s3_video_storage = await create_s3_video_storage()
-    app.state.s3_video_storage = s3_video_storage
+    # s3_video_storage = await create_s3_video_storage()
+    # app.state.s3_video_storage = s3_video_storage
 
     yield
 
     logger.info("Shutting down: Disposing all active streaming sessions...")
-
-    await streaming_manager.dispose_all_sessions()
-    await s3_video_storage.close()
+    if not broker.is_worker_process:
+        await broker.shutdown()
+    await app.streaming_manager.dispose_all_sessions()
+    # await app.state.s3_video_storage.close()
     await engine.dispose()
     await app.state.triton_client.close()
 
