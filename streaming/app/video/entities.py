@@ -25,24 +25,27 @@ class VideoMetaEntity:
 
 @dataclass(frozen=True)
 class StreamingVideoEntity:
-    s3_key: str
-    streaming_session_id: UUID
-
+    s3_key: UUID
+    session_id: UUID
+    created_at: datetime
     meta: Optional[VideoMetaEntity] = None
-    id: Optional[UUID] = field(default_factory=uuid4)
-    created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
 
-    @classmethod
-    def from_db(cls, model) -> "StreamingVideoEntity":
-        return cls(id=model.id,
-                   s3_key=model.s3_key,
-                   created_at=model.created_at,
-                   streaming_session_id=model.streaming_session_id,
-                   meta=VideoMetaEntity(width=model.width, height=model.height, duration=model.duration,
-                                        codec=model.meta.get("codec"), file_size=model.file_size,
-                                        mime_type=model.mime_type, fps=model.fps, bit_rate=model.meta.get("bit_rate"),
-                                        frame_count=model.meta.get("frame_count"))
-                   )
 
+    # @classmethod
+    # def from_db(cls, model) -> "StreamingVideoEntity":
+    #     return cls(id=model.id,
+    #                s3_key=model.s3_key,
+    #                created_at=model.created_at,
+    #                streaming_session_id=model.streaming_session_id,
+    #                meta=VideoMetaEntity(width=model.width, height=model.height, duration=model.duration,
+    #                                     codec=model.meta.get("codec"), file_size=model.file_size,
+    #                                     mime_type=model.mime_type, fps=model.fps, bit_rate=model.meta.get("bit_rate"),
+    #                                     frame_count=model.meta.get("frame_count"))
+    #                )
+
+@dataclass(frozen=True)
+class CreateVideoEntity:
+    session_id: UUID
+    meta: Optional[VideoMetaEntity] = None
 
 

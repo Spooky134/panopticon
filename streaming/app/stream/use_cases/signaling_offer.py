@@ -4,7 +4,7 @@ from app.stream.engine.streaming_manager import StreamingManager
 from app.stream.engine.stream_status import StreamStatus
 from app.stream.entities import SDPEntity
 from app.core.logging import get_logger
-from app.video.entities import VideoMetaEntity
+from app.video.entities import VideoMetaEntity, StreamingVideoEntity, CreateVideoEntity
 from app.session.repository import SessionRepository
 from app.exceptions import NotFoundError
 from app.session.entities import UpdateSessionEntity
@@ -82,34 +82,26 @@ class SignalingOfferUseCase:
             repo = self._session_repo_factory(uow.session)
 
             session_entity = await repo.get(session_id)
+
             if not session_entity:
                 raise NotFoundError
 
-
-            session_entity_updated = UpdateSessionEntity(
+            update_session = UpdateSessionEntity(
                 status=StreamStatus.FINISHED,
                 ended_at=finished_at
             )
 
-            session_entity = await repo.update(
-                session_id,
-                session_entity_updated
-            )
+            await repo.update(session_id, update_session)
+
+            create_video = CreateVideoEntity(session_id, video_meta)
+            video = await repo.attach_video(session_id, create_video)
 
             await uow.commit()
 
         await uploading_video_to_s3.kiq(
-            session_id=session_id,
-            file_path=file_path,
-            width=video_meta.width,
-            height=video_meta.height,
-            duration=video_meta.duration,
-            codec=video_meta.codec,
-            file_size=video_meta.file_size,
-            mime_type=video_meta.mime_type,
-            fps=video_meta.fps,
-            bit_rate=video_meta.bit_rate,
-            frame_count=video_meta.frame_count,
+            session_id=str(session_id),
+            s3_key=str(video.s3_key),
+            file_path=file_path
         )
         logger.info(f"session: {session_id} - session updated, video upload started in background")
 

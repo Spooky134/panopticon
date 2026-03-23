@@ -36,15 +36,15 @@ class S3VideoStorage:
             logger.warning(f"bucket not found, creating one: {self._bucket_name} ({e})")
             await self._client.create_bucket(Bucket=self._bucket_name)
 
-    async def upload_multipart(self, streaming_session_id: UUID, file_path: str,
-                               object_name: str, prefix:str="videos", mime_type: str="video/mp4") -> Optional[str]:
+    async def upload_multipart(self, session_id: UUID, file_path: str,
+                               object_name: str, prefix:str="videos", mime_type: str="video/mp4"):
         s3_key = self._generate_s3_key(
             object_name=object_name,
             file_path=file_path,
             prefix=prefix,
         )
         logger.info(
-            f"session: {streaming_session_id} - multipart loading {file_path}"
+            f"session: {session_id} - multipart loading {file_path}"
             f" → {self._bucket_name}/{s3_key}"
         )
 
@@ -84,19 +84,17 @@ class S3VideoStorage:
                 UploadId=upload_id,
                 MultipartUpload={"Parts": parts}
             )
-            logger.info(f"session: {streaming_session_id} - upload success")
-            return s3_key
+            logger.info(f"session: {session_id} - upload success")
         except Exception as e:
-            logger.error(f"session: {streaming_session_id} - error upload failed: {e}")
+            logger.error(f"session: {session_id} - error upload failed: {e}")
             await self.abort(
-                streaming_session_id=streaming_session_id,
+                session_id=session_id,
                 upload_id=upload_id,
                 s3_key=s3_key
             )
-            return None
 
-    async def abort(self, streaming_session_id: UUID, upload_id: Optional[str], s3_key: str):
-        logger.warning(f"session: {streaming_session_id} - aborting multipart upload {upload_id}")
+    async def abort(self, session_id: UUID, upload_id: Optional[str], s3_key: str):
+        logger.warning(f"session: {session_id} - aborting multipart upload {upload_id}")
         if not upload_id:
             return
 
@@ -107,7 +105,7 @@ class S3VideoStorage:
                 UploadId=upload_id
             )
         except Exception as abort_err:
-            logger.error(f"session: {streaming_session_id} - failed to abort upload: {abort_err}")
+            logger.error(f"session: {session_id} - failed to abort upload: {abort_err}")
 
     async def close(self):
         if self._client:

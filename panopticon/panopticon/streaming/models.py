@@ -1,5 +1,6 @@
 import uuid
 from django.db import models
+from django.db.models.functions import Now
 from django.utils import timezone
 from django.contrib.auth.models import User
 
@@ -13,9 +14,9 @@ class StreamingSession(models.Model):
     ]
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    created_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(db_default=Now())
     started_at = models.DateTimeField(null=True, blank=True)
-    ended_at = models.DateTimeField(null=True, blank=True, )
+    ended_at = models.DateTimeField(null=True, blank=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="started")
 
     class Meta:
@@ -29,8 +30,8 @@ class StreamingSession(models.Model):
 
 
 class StreamingVideo(models.Model):
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    s3_key = models.CharField(max_length=500)
+    # id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    s3_key = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
     width = models.PositiveIntegerField(null=True, blank=True)
     height = models.PositiveIntegerField(null=True, blank=True)
@@ -40,7 +41,7 @@ class StreamingVideo(models.Model):
     mime_type = models.CharField(max_length=100, null=True, blank=True)
     meta = models.JSONField(null=True, blank=True, default=dict)
 
-    created_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(db_default=Now())
 
     session = models.ForeignKey(
         StreamingSession,

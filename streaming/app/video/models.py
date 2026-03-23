@@ -1,4 +1,4 @@
-from sqlalchemy import String, DateTime, Index, ForeignKey, Float
+from sqlalchemy import String, DateTime, Index, ForeignKey, Float, text
 from sqlalchemy.dialects.postgresql import UUID, JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from datetime import datetime
@@ -10,8 +10,8 @@ from app.core.database import Base
 class VideoModel(Base):
     __tablename__ = "video"
 
-    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    s3_key: Mapped[str] = mapped_column(String(500))
+    # id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    s3_key: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
 
     width: Mapped[int] = mapped_column(nullable=True)
     height: Mapped[int] = mapped_column(nullable=True)
@@ -21,7 +21,10 @@ class VideoModel(Base):
     mime_type: Mapped[str] = mapped_column(String(100), default="video/mp4", nullable=True)
     meta: Mapped[dict] = mapped_column(JSONB, nullable=True)
 
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=text("TIMEZONE('utc', CURRENT_TIMESTAMP)"),
+    )
     session_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
         ForeignKey("session.id")

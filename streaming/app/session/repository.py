@@ -2,7 +2,8 @@ from typing import Optional, List
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
-from app.video.entities import StreamingVideoEntity
+from app.video.entities import StreamingVideoEntity, CreateVideoEntity
+from app.video.mappers import VideoMapper
 from app.video.models import VideoModel
 from app.core.logging import get_logger
 from uuid import UUID
@@ -12,7 +13,7 @@ from app.session.entities import StreamingSessionEntity, CreateSessionEntity, Up
 from app.session.models import SessionModel
 from app.core.repositories import BaseRepository
 from app.core.types import UNSET
-from app.session.mappers import StreamingSessionMapper
+from app.session.mappers import SessionMapper
 
 
 logger = get_logger(__name__)
@@ -36,7 +37,7 @@ class SessionRepository(BaseRepository):
         if session_orm is None:
             logger.debug(f"Streaming session id={session_id} not found in DB")
             return None
-        return StreamingSessionMapper.to_entity(session_orm)
+        return SessionMapper.to_entity(session_orm)
 
 
     async def get_all(self, offset: int = 0, limit: int = 100) -> List[StreamingSessionEntity]:
@@ -44,7 +45,7 @@ class SessionRepository(BaseRepository):
             offset=offset, limit=limit
         )
 
-        return StreamingSessionMapper.to_entities(session_orms)
+        return SessionMapper.to_entities(session_orms)
 
 
     async def create(self, session_entity: CreateSessionEntity) -> Optional[StreamingSessionEntity]:
@@ -55,7 +56,7 @@ class SessionRepository(BaseRepository):
         await self._db_session.flush()
         await self._db_session.refresh(session_orm)
 
-        return StreamingSessionMapper.to_entity(session_orm)
+        return SessionMapper.to_entity(session_orm)
     
 
     async def update(self, session_id: UUID, session_entity: UpdateSessionEntity) -> Optional[StreamingSessionEntity]:
@@ -73,7 +74,7 @@ class SessionRepository(BaseRepository):
 
         await self._update(session_orm, update_data)
         logger.info(f"session: {session_id} - updated")
-        return StreamingSessionMapper.to_entity(session_orm)
+        return SessionMapper.to_entity(session_orm)
     
 
     async def delete(self, session_id: UUID) -> bool:
@@ -82,11 +83,9 @@ class SessionRepository(BaseRepository):
         )
 
 
-    async def attach_video(self, session_id: UUID, video_entity: StreamingVideoEntity) -> None:
+    async def attach_video(self, session_id: UUID, video_entity: CreateVideoEntity) -> StreamingVideoEntity:
         streaming_video = VideoModel(
             session_id=session_id,
-            s3_key=video_entity.s3_key,
-            created_at=video_entity.created_at,
             duration=video_entity.meta.duration,
             fps=video_entity.meta.fps,
             width=video_entity.meta.width,
@@ -99,3 +98,5 @@ class SessionRepository(BaseRepository):
         self._db_session.add(streaming_video)
         await self._db_session.flush()
         await self._db_session.refresh(streaming_video)
+
+        return VideoMapper.to_entity(streaming_video)
