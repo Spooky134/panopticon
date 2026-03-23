@@ -59,7 +59,7 @@ services:
     container_name: stream_service
     build:
       context: .
-      dockerfile: vstream_service/Dockerfile
+      dockerfile: streaming/Dockerfile
     depends_on:
       processor:
         condition: service_healthy
@@ -68,6 +68,8 @@ services:
       storage:
         condition: service_healthy
       database:
+        condition: service_healthy
+      broker: 
         condition: service_healthy
     env_file:
       - .env
@@ -79,7 +81,7 @@ services:
     networks:
       - mainnet
     volumes:
-      - ./vstream_service:/app
+      - ./streaming:/app
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/api/health"]
       interval: 10s
@@ -127,7 +129,7 @@ services:
       --no-tls
       --no-dtls
       --log-file=stdout
-      --verbose
+      --simple-log
     ports:
       - "3478:3478/udp"            # STUN/TURN discovery
       - "3478:3478/tcp"
@@ -190,11 +192,51 @@ services:
       retries: 3
       start_period: 10s
     restart: unless-stopped
+  broker:
+    container_name: broker
+    image: rabbitmq:3-management-alpine
+    depends_on:
+      database:
+        condition: service_healthy
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    networks:
+      - mainnet
+    volumes:
+      - broker_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "check_running"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  worker:
+    container_name: worker
+    build:
+      context: .
+      dockerfile: streaming/Dockerfile
+    depends_on:
+      broker: 
+        condition: service_healthy
+      database:
+        condition: service_healthy
+    env_file:
+      - .env
+    command: taskiq worker app.core.taskiq_broker:broker --fs-discover --workers 1
+    networks:
+      - mainnet
+    volumes:
+      - ./streaming:/app
+    restart: unless-stopped
+
 
 volumes:
   storage_data:
   database_data:
   panopticon_static:
+  broker_data:
 
 networks:
   mainnet:

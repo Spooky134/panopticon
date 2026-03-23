@@ -20,7 +20,8 @@ class StreamingSession(models.Model):
 
     class Meta:
         managed = False
-        db_table = "streaming_session"
+        db_table = "session"
+        managed = True
         indexes = [
             models.Index(fields=["status"]),
         ]
@@ -30,24 +31,29 @@ class StreamingSession(models.Model):
 class StreamingVideo(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     s3_key = models.CharField(max_length=500)
-    s3_bucket = models.CharField(max_length=255)
+
+    width = models.PositiveIntegerField(null=True, blank=True)
+    height = models.PositiveIntegerField(null=True, blank=True)
     duration = models.IntegerField(null=True, blank=True)
+    fps = models.IntegerField(null=True, blank=True)
     file_size = models.IntegerField(null=True, blank=True)
     mime_type = models.CharField(max_length=100, null=True, blank=True)
+    meta = models.JSONField(null=True, blank=True, default=dict)
+
     created_at = models.DateTimeField(null=True, blank=True)
 
-    streaming_session = models.ForeignKey(
+    session = models.ForeignKey(
         StreamingSession,
         on_delete=models.CASCADE,
-        db_column="streaming_session_id",
-        related_name="video")
+        db_column="session_id",
+        related_name="videos")
 
 
     class Meta:
-        db_table = "streaming_video"
+        db_table = "video"
         #TODO поменять флаг когда будет alembic
-        managed = False
+        managed = True
         indexes = [
             models.Index(fields=["s3_key"]),
-            models.Index(fields=["streaming_session_id"]),
+            models.Index(fields=["session_id"]),
         ]
