@@ -9,7 +9,7 @@ import uuid
 from django.http import JsonResponse
 import json
 
-from .utils.ice import get_ice_servers
+from .webrtc.ice import get_ice_servers
 
 
 #TODO можно задудосить стрим сервис если много запросов

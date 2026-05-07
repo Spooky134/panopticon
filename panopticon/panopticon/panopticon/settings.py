@@ -14,7 +14,7 @@ from pathlib import Path
 import os
 import environ
 import json
-from panopticon.config.webrtc.servers import STUNServer, TURNServer
+
 
 env = environ.Env()
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -23,14 +23,8 @@ env.read_env(BASE_DIR / '.env')
 
 STREAM_SERVICE__INTERNAL_URL = env("STREAM_SERVICE__INTERNAL_URL")
 
-STUN_SERVERS = [
-    STUNServer(**server)
-    for server in json.loads(env("STUN_SERVERS", default="[]"))
-]
-TURN_SERVERS = [
-    TURNServer(**server) 
-    for server in json.loads(env("TURN_SERVERS", default="[]"))
-]
+STUN_SERVERS = [server for server in json.loads(env("STUN_SERVERS", default="[]"))]
+TURN_SERVERS = [server for server in json.loads(env("TURN_SERVERS", default="[]"))]
 
 
 DATABASE__DB = env('DATABASE__DB')
